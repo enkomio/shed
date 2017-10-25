@@ -1,0 +1,1 @@
+﻿# All these classes will be logged, even if blacklisted

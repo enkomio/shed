@@ -1,0 +1,19 @@
+﻿# All these classes are not logged
+Microsoft
+System.Object
+System.Exception
+System.OutOfMemoryException
+System.StackOverflowException
+System.ExecutionEngineException
+System.Threading
+System.SharedStatics
+System.AppDomain
+System.Security.Policy
+System.Security.PermissionSet
+System.Security.HostSecurityManager
+System.IntPtr
+System.RuntimeType
+System.Byte
+System.Char
+System.Int
+System.UInt
