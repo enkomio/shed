@@ -1,0 +1,4 @@
+source https://nuget.org/api/v2
+
+nuget Microsoft.Diagnostics.Runtime >= 0.8.31-beta
+nuget Argu
