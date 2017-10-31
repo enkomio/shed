@@ -30,11 +30,11 @@ Shed.exe --pid 2356
 ### Inspecting a binary
 In order to inspect a binary, _Shed_ needs to execute it and to attach to it in order to inspect the runtime. Example:
 
-Shed.exe --exe <path to file>.exe
+Shed.exe --exe malware.exe
 
 You can also specify the amount of time (in milliseconds) to wait before to suspend the process. This will allow the program to have the time to initialize its properties. Example:
 
-Shed.exe --timeout 2000 --exe <path to file>.exe
+Shed.exe --timeout 2000 --exe malware.exe
 
 ### Dumping options
 By default _Shed_ dump both the heap and the modules. If you want only one of that specify the _--dump-heap_ option to dump only the objects in the heap or the _--dump-modules_ to dump only the modules.
