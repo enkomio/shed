@@ -49,35 +49,6 @@
     </Otherwise>
   </Choose>
   <Import Project="$(FSharpTargetsPath)" />
-  <ItemGroup>
-    <Compile Include="AssemblyInfo.fs" />
-    <Content Include="packages.config" />
-    <Compile Include="Entities.fs" />
-    <Compile Include="Messages.fs" />
-    <Compile Include="IMessageHandler.fs" />
-    <Compile Include="MessageBus.fs" />
-    <Compile Include="MessageLogger.fs" />
-    <Compile Include="ModuleDumper.fs" />
-    <Compile Include="HeapDumper.fs" />
-    <Compile Include="AnalysisReport.fs" />
-    <Compile Include="ShedFramework.fs" />
-  </ItemGroup>
-  <ItemGroup>
-    <Reference Include="mscorlib" />
-    <Reference Include="FSharp.Core">
-      <Name>FSharp.Core</Name>
-      <AssemblyName>FSharp.Core.dll</AssemblyName>
-      <HintPath>$(MSBuildProgramFiles32)\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\$(TargetFSharpCoreVersion)\FSharp.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Numerics" />
-    <Reference Include="System.Runtime.Serialization" />
-    <Reference Include="System.ValueTuple">
-      <HintPath>..\packages\System.ValueTuple.4.3.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Xml" />
-  </ItemGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
@@ -96,4 +67,34 @@
       </ItemGroup>
     </When>
   </Choose>
+  <ItemGroup>
+    <Compile Include="AssemblyInfo.fs" />
+    <Content Include="packages.config" />
+    <Compile Include="Entities.fs" />
+    <Compile Include="Messages.fs" />
+    <Compile Include="IMessageHandler.fs" />
+    <Compile Include="MessageBus.fs" />
+    <Compile Include="MessageLogger.fs" />
+    <Compile Include="ModuleDumper.fs" />
+    <Compile Include="HeapDumper.fs" />
+    <Compile Include="AnalysisReport.fs" />
+    <Compile Include="ShedFramework.fs" />
+    <None Include="paket.references" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="mscorlib" />
+    <Reference Include="FSharp.Core">
+      <Name>FSharp.Core</Name>
+      <AssemblyName>FSharp.Core.dll</AssemblyName>
+      <HintPath>$(MSBuildProgramFiles32)\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\$(TargetFSharpCoreVersion)\FSharp.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.ValueTuple">
+      <HintPath>..\packages\System.ValueTuple.4.3.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Xml" />
+  </ItemGroup>
 </Project>
