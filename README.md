@@ -39,6 +39,13 @@ You can also specify the amount of time (in milliseconds) to wait before to susp
 ### Dumping options
 By default _Shed_ dump both the heap and the modules. If you want only one of that specify the _--dump-heap_ option to dump only the objects in the heap or the _--dump-modules_ to dump only the modules.
 
+Dumping the heap can produce a lot of information which are not strictly useful for the analysis. You can filter it by using two files:
+
+**blacklist.txt** this file contains the type names prefix that must not be logged
+**whitelist.txt** this file contains the type names prefix that must be logged even if blacklisted
+
+For example, if you want to filter all the *System.IO* namespace but you are interested in logging *System.IO.MemoryStream*, you can add the first value to **blacklist.txt** and the second one to **whitelist.txt**.
+
 ### Examples
 In the _Examples_ folder you will find three different projects that you can use in order to test _Shed_. Example:
 
