@@ -42,6 +42,7 @@ By default _Shed_ dump both the heap and the modules. If you want only one of th
 Dumping the heap can produce a lot of information which are not strictly useful for the analysis. You can filter it by using two files:
 
 **blacklist.txt** this file contains the type names prefix that must not be logged
+
 **whitelist.txt** this file contains the type names prefix that must be logged even if blacklisted
 
 For example, if you want to filter all the *System.IO* namespace but you are interested in logging *System.IO.MemoryStream*, you can add the first value to **blacklist.txt** and the second one to **whitelist.txt**.
