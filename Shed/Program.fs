@@ -106,6 +106,6 @@ module Program =
                 printUsage(parser.PrintUsage())   
                 1
             | e ->
-                printError(e.Message)
+                printError(e.ToString())
                 1
         
