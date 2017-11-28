@@ -275,7 +275,7 @@ type ModuleDumper(messageBus: MessageBus) =
         for procModule in proc.Modules do
             messageBus.Dispatch(new ExtractedProcessModule(procModule))        
 
-        for clrModule in runtime.Modules do            
+        for clrModule in (runtime.Modules |> Seq.filter (fun x -> not (String.IsNullOrEmpty x.Name))) do            
             extractModule(clrModule, runtime, pid)
 
     member this.CanHandle(command: IMessage) =
