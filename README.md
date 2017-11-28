@@ -1,4 +1,4 @@
-# Shed - .NET runtine inspector
+# Shed - .NET runtime inspector
 
 _Shed_ is an application that allow to inspect the .NET runtime of a program in order to extract useful information. It can be used to inspect malicious applications in order to have a first general 
 overview of which information are stored once that the malware is executed.
