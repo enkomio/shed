@@ -220,7 +220,12 @@ type ModuleDumper(messageBus: MessageBus) =
         carvedPe
 
     let extractModule(clrModule: ClrModule, runtime: ClrRuntime, pid: Int32) =
-        let isFromGAC = clrModule.Name.Contains("GAC_")        
+        let moduleName = 
+            if clrModule.Name <> null 
+            then clrModule.Name 
+            else String.Format("Unamed_{0}", Guid.NewGuid().ToString("N"))
+
+        let isFromGAC = moduleName.Contains("GAC_")        
         let mutable errorMessage: String option = None        
         
         // module loaded via reflection
@@ -249,17 +254,17 @@ type ModuleDumper(messageBus: MessageBus) =
                                 let isDll = pe.Header.Characteristics &&& IMAGE_FILE_DLL > uint16 0
                                 let isExec = pe.Header.Characteristics &&& IMAGE_FILE_EXECUTABLE_IMAGE > uint16 0
                                 messageBus.Dispatch(new ExtractedManagedModuleEvent(clrModule, peBuffer, isDll, isExec)) 
-                                info("Carved Module from memory: " + clrModule.Name)                               
+                                info("Carved Module from memory: " + moduleName)                               
                             else
                                 errorMessage <- Some("Unable carve file from memory. Error during loading of extracted assembly.") 
                         | None -> 
-                            errorMessage <- Some("Unable to dump dynamic module: " + clrModule.Name + ". Error during loading of extracted assembly.") 
+                            errorMessage <- Some("Unable to dump dynamic module: " + moduleName + ". Error during loading of extracted assembly.") 
                 else
-                    errorMessage <- Some("Unable to dump dynamic module: " + clrModule.Name + ". PE format not valid") 
+                    errorMessage <- Some("Unable to dump dynamic module: " + moduleName + ". PE format not valid") 
             else
-                errorMessage <- Some("Unable to dump dynamic module: " + clrModule.Name + ". Error reading memory") 
+                errorMessage <- Some("Unable to dump dynamic module: " + moduleName + ". Error reading memory") 
         else
-            errorMessage <- Some("Unable to dump dynamic module: " + clrModule.Name + ". Error accessing memory")
+            errorMessage <- Some("Unable to dump dynamic module: " + moduleName + ". Error accessing memory")
 
         match errorMessage with 
         | Some msg ->
