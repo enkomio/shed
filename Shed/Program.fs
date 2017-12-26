@@ -97,10 +97,15 @@ module Program =
                     0
                 | None, Some file ->
                     let fullPath = Path.GetFullPath(file)
-                    let proc = Process.Start(fullPath)
-                    runFramework(proc.Id, results)   
-                    proc.Kill()                     
-                    0                    
+                    if not <| File.Exists(file) then
+                        printError(String.Format("File '{0}' not found", fullPath))
+                        1
+                    else
+                        let proc = Process.Start(fullPath)
+                        runFramework(proc.Id, results)   
+                        if not proc.HasExited then
+                            proc.Kill()                     
+                        0                    
         with 
             | :? ArguParseException ->
                 printUsage(parser.PrintUsage())   
