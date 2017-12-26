@@ -46,7 +46,11 @@ type AnalysisReport(messageBus: MessageBus) =
         info("Saved dynamic module: " + name)
             
     let saveModule(outputDir: String, modEvent: ExtractedManagedModuleEvent) =
-        let name = Path.GetFileName(modEvent.Module.Name.Split(',').[0])
+        let chunks = modEvent.Module.Name.Split(',')
+        let name =
+            if chunks.Length > 0 then Path.GetFileName(chunks.[0])
+            elif not(String.IsNullOrWhiteSpace(modEvent.Module.Name)) then modEvent.Module.Name
+            else Guid.NewGuid().ToString("N")
         saveFileBuffer(outputDir, name, modEvent.Bytes, modEvent.IsDll, modEvent.isExecutable)
 
     let saveProcessModule(outputDir: String, modEvent: ExtractedProcessModule) =

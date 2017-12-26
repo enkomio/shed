@@ -88,7 +88,7 @@ type ModuleDumper(messageBus: MessageBus) =
 
             Array.Copy(peHeader, carvedPe.Value, peHeader.Length)                    
             for section in sections do
-                Array.Copy(section.Content, 0, carvedPe.Value, section.PointerToRawData, section.SizeOfRawData)
+                Array.Copy(section.Content, 0, carvedPe.Value, section.PointerToRawData, section.Content.Length)
         
         // fix entry point
         sections
@@ -157,7 +157,6 @@ type ModuleDumper(messageBus: MessageBus) =
     let extractSectionsFromMemory(pe: PEFile, runtime: ClrRuntime, clrModule: ClrModule) =
         let sections = new List<Section>()
         let baseAddress = int32 <| if clrModule.ImageBase > 0uL then clrModule.ImageBase else pe.Header.ImageBase
-        let imageBase = pe.Header.ImageBase
 
         let sectionsField = 
             pe.Header.GetType()
@@ -172,38 +171,34 @@ type ModuleDumper(messageBus: MessageBus) =
         let sectionHeaderSize = Marshal.SizeOf(sectionHeaderType)
 
         // properties useful for dump
+        let nameBytesOffset = Marshal.OffsetOf(sectionHeaderType, "NameBytes")
         let virtualAddressOffset = Marshal.OffsetOf(sectionHeaderType, "VirtualAddress")
         let virtualSizeOffset = Marshal.OffsetOf(sectionHeaderType, "VirtualSize")
         let sizeOfRawDataOffset = Marshal.OffsetOf(sectionHeaderType, "SizeOfRawData")
         let rawAddressOffset = Marshal.OffsetOf(sectionHeaderType, "PointerToRawData")
-
-        let mutable error = false
-        let bytesRead = ref 0
-        
+                
         // extract sections content
         let mutable sectionPointer = new IntPtr(Pointer.Unbox(sectionsField))                    
         for i=0 to int pe.Header.NumberOfSections-1 do
-            if not error then
-                // read section fieds
-                let section = {
-                    Name = Marshal.PtrToStringAnsi(sectionPointer)
-                    VirtualAddress = Marshal.ReadInt32(sectionPointer + virtualAddressOffset)
-                    VirtualSize = Marshal.ReadInt32(sectionPointer + virtualSizeOffset)
-                    SizeOfRawData = Marshal.ReadInt32(sectionPointer + sizeOfRawDataOffset)
-                    PointerToRawData = Marshal.ReadInt32(sectionPointer + rawAddressOffset)
-                    Content = Array.empty<Byte>
-                }
-                sections.Add(section)
+            // read section fieds
+            let section = {
+                Name = Marshal.PtrToStringAnsi(sectionPointer + nameBytesOffset)
+                VirtualAddress = Marshal.ReadInt32(sectionPointer + virtualAddressOffset)
+                VirtualSize = Marshal.ReadInt32(sectionPointer + virtualSizeOffset)
+                SizeOfRawData = Marshal.ReadInt32(sectionPointer + sizeOfRawDataOffset)
+                PointerToRawData = Marshal.ReadInt32(sectionPointer + rawAddressOffset)
+                Content = Array.empty<Byte>
+            }
+            sections.Add(section)
 
-                // read section content
-                let sectionBuffer = Array.zeroCreate<Byte> section.SizeOfRawData
-                if runtime.ReadMemory(uint64 (section.VirtualAddress + baseAddress), sectionBuffer, section.SizeOfRawData, bytesRead) then    
-                    section.Content <- sectionBuffer
+            // read section content
+            let sectionBuffer = Array.zeroCreate<Byte> section.SizeOfRawData
+            let bytesRead = ref 0
+            if runtime.ReadMemory(uint64 (section.VirtualAddress + baseAddress), sectionBuffer, section.SizeOfRawData, bytesRead) then    
+                section.Content <- sectionBuffer
 
-                    // go next section
-                    sectionPointer <- sectionPointer + new IntPtr(sectionHeaderSize)  
-                else
-                    error <- true
+            // go next section
+            sectionPointer <- sectionPointer + new IntPtr(sectionHeaderSize)
         sections
 
     let carveFileFromMemory(pe: PEFile, clrModule: ClrModule, runtime: ClrRuntime) =
@@ -225,54 +220,56 @@ type ModuleDumper(messageBus: MessageBus) =
             then clrModule.Name 
             else String.Format("Unamed_{0}", Guid.NewGuid().ToString("N"))
 
-        let isFromGAC = moduleName.Contains("GAC_")        
-        let mutable errorMessage: String option = None        
+        let isFromGAC = moduleName.Contains("GAC_")      
+        if not isFromGAC then
+            let mutable errorMessage: String option = None  
         
-        // module loaded via reflection
-        let virtualQueryData = ref(new VirtualQueryData())            
-        if not isFromGAC && runtime.DataTarget.DataReader.VirtualQuery(clrModule.ImageBase, virtualQueryData) then
-            let offset = clrModule.ImageBase - (!virtualQueryData).BaseAddress
-            let (result, assemblyBytes, outSize) = readMemory(runtime, clrModule.ImageBase + offset, int32 ((!virtualQueryData).Size - uint64 offset))
-            if result then
-                use streamPe = new MemoryStream(assemblyBytes)
-                let pe = PEFile.TryLoad(streamPe, true)     
+            // module loaded via reflection
+            let virtualQueryData = ref(new VirtualQueryData())            
+            if runtime.DataTarget.DataReader.VirtualQuery(clrModule.ImageBase, virtualQueryData) then
+                let offset = clrModule.ImageBase - (!virtualQueryData).BaseAddress
+                let (result, assemblyBytes, outSize) = readMemory(runtime, clrModule.ImageBase + offset, int32 ((!virtualQueryData).Size - uint64 offset))
+                if result then
+                    use streamPe = new MemoryStream(assemblyBytes)
+                    let pe = PEFile.TryLoad(streamPe, true)     
 
-                if pe <> null && pe.Header.SizeOfImage > uint32 0 then
-                    if checkAssemblyDumpValidity(assemblyBytes) then
-                        let isDll = pe.Header.Characteristics &&& IMAGE_FILE_DLL > uint16 0
-                        let isExec = pe.Header.Characteristics &&& IMAGE_FILE_EXECUTABLE_IMAGE > uint16 0
+                    if pe <> null && pe.Header.SizeOfImage > uint32 0 then
+                        if checkAssemblyDumpValidity(assemblyBytes) then
+                            let isDll = pe.Header.Characteristics &&& IMAGE_FILE_DLL > uint16 0
+                            let isExec = pe.Header.Characteristics &&& IMAGE_FILE_EXECUTABLE_IMAGE > uint16 0
 
-                        // dispatch messages
-                        messageBus.Dispatch(new ExtractedManagedModuleEvent(clrModule, assemblyBytes, isDll, isExec))                            
+                            // dispatch messages
+                            messageBus.Dispatch(new ExtractedManagedModuleEvent(clrModule, assemblyBytes, isDll, isExec))                            
+                        else
+                            // file is mapped, try to dump it from memory
+                            match carveFileFromMemory(pe, clrModule, runtime) with
+                            | Some peBuffer ->
+                                use streamPe = new MemoryStream(peBuffer)
+                                let pe = PEFile.TryLoad(streamPe, false)
+                                if pe <> null then
+                                    let isDll = pe.Header.Characteristics &&& IMAGE_FILE_DLL > uint16 0
+                                    let isExec = pe.Header.Characteristics &&& IMAGE_FILE_EXECUTABLE_IMAGE > uint16 0
+                                    messageBus.Dispatch(new ExtractedManagedModuleEvent(clrModule, peBuffer, isDll, isExec)) 
+                                    info("Carved Module from memory: " + moduleName)                               
+                                else
+                                    errorMessage <- Some("Unable carve file from memory. Error during loading of extracted assembly.") 
+                            | None -> 
+                                errorMessage <- Some("Unable to dump dynamic module: " + moduleName + ". Error during loading of extracted assembly.") 
                     else
-                        // file is mapped, try to dump it from memory
-                        match carveFileFromMemory(pe, clrModule, runtime) with
-                        | Some peBuffer ->
-                            use streamPe = new MemoryStream(peBuffer)
-                            let pe = PEFile.TryLoad(streamPe, false)
-                            if pe <> null then
-                                let isDll = pe.Header.Characteristics &&& IMAGE_FILE_DLL > uint16 0
-                                let isExec = pe.Header.Characteristics &&& IMAGE_FILE_EXECUTABLE_IMAGE > uint16 0
-                                messageBus.Dispatch(new ExtractedManagedModuleEvent(clrModule, peBuffer, isDll, isExec)) 
-                                info("Carved Module from memory: " + moduleName)                               
-                            else
-                                errorMessage <- Some("Unable carve file from memory. Error during loading of extracted assembly.") 
-                        | None -> 
-                            errorMessage <- Some("Unable to dump dynamic module: " + moduleName + ". Error during loading of extracted assembly.") 
+                        errorMessage <- Some("Unable to dump dynamic module: " + moduleName + ". PE format not valid") 
                 else
-                    errorMessage <- Some("Unable to dump dynamic module: " + moduleName + ". PE format not valid") 
+                    errorMessage <- Some("Unable to dump dynamic module: " + moduleName + ". Error reading memory") 
             else
-                errorMessage <- Some("Unable to dump dynamic module: " + moduleName + ". Error reading memory") 
-        else
-            errorMessage <- Some("Unable to dump dynamic module: " + moduleName + ". Error accessing memory")
+                errorMessage <- Some("Unable to dump dynamic module: " + moduleName + ". Error accessing memory")
 
-        match errorMessage with 
-        | Some msg ->
-            if File.Exists(clrModule.FileName) then
-                dumpFilename(clrModule)
-            else
-                error(msg)
-        | _ -> ()
+            // check error
+            match errorMessage with 
+            | Some msg ->
+                if File.Exists(clrModule.FileName) then
+                    dumpFilename(clrModule)
+                else
+                    error(msg)
+            | _ -> ()
                                             
     let dumpModules(runtime: ClrRuntime, pid: Int32) =        
         // inspect Process
