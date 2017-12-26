@@ -227,9 +227,13 @@ type ModuleDumper(messageBus: MessageBus) =
             // module loaded via reflection
             let virtualQueryData = ref(new VirtualQueryData())            
             if runtime.DataTarget.DataReader.VirtualQuery(clrModule.ImageBase, virtualQueryData) then
-                let offset = clrModule.ImageBase - (!virtualQueryData).BaseAddress
-                let (result, assemblyBytes, outSize) = readMemory(runtime, clrModule.ImageBase + offset, int32 ((!virtualQueryData).Size - uint64 offset))
+                let (result, assemblyBytes, outSize) = readMemory(runtime, clrModule.ImageBase, int32 ((!virtualQueryData).Size))
                 if result then
+                    // try to fix dynamic assembly
+                    if clrModule.IsDynamic then
+                        assemblyBytes.[0] <- byte <| Char.ConvertToUtf32("M", 0)
+                        assemblyBytes.[1] <- byte <| Char.ConvertToUtf32("Z", 0)
+
                     use streamPe = new MemoryStream(assemblyBytes)
                     let pe = PEFile.TryLoad(streamPe, true)     
 

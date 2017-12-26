@@ -48,9 +48,16 @@ type ExtractedManagedModuleEvent(clrModule: ClrModule, bytes: Byte array, isDll:
     member val IsDll = isDll with get
     member val isExecutable = isExec with get
 
+    override this.ToString() =
+        if not(String.IsNullOrWhiteSpace(clrModule.Name)) then clrModule.Name
+        else String.Format("Unnamed module, len: {0}", this.Bytes.Length)
+
 type ExtractedProcessModule(procModule: ProcessModule) =
     inherit BaseEvent()
     member val Module = procModule with get, set
+
+    override this.ToString() =
+        string(procModule.ModuleName)
 
 type HeapWalked(root: HeapObject) =
     inherit BaseEvent()
