@@ -59,10 +59,12 @@
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
     <Content Include="packages.config" />
+    <Compile Include="Native.fs" />
     <Compile Include="Entities.fs" />
     <Compile Include="Messages.fs" />
     <Compile Include="IMessageHandler.fs" />
     <Compile Include="MessageBus.fs" />
+    <Compile Include="HandlerSettings.fs" />
     <Compile Include="MessageLogger.fs" />
     <Compile Include="ModuleDumper.fs" />
     <Compile Include="HeapDumper.fs" />

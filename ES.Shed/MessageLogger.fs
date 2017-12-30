@@ -1,6 +1,7 @@
 ﻿namespace ES.Shed
 
 open System
+open System.Text
 open System.Collections.Generic
 open Microsoft.Diagnostics.Runtime
 
@@ -23,26 +24,29 @@ module LogginHelpers =
 
         (trace, info, warning, error)
 
-type MessageLogger(messageBus: MessageBus) =
+type MessageLogger(settings: HandlerSettings) =
     let mutable _logLevel = LogLevel.Info
 
+    let printWithColor(msg: String, color: ConsoleColor) =
+        Console.ForegroundColor <- color
+        Console.WriteLine(msg)
+        Console.ResetColor() 
+
     let trace(msg: String) =
-        Console.ForegroundColor <- ConsoleColor.DarkCyan
-        Console.WriteLine("[~] {0}", msg)
-        Console.ResetColor()        
+        let m = "[~] " + msg
+        printWithColor(m, ConsoleColor.DarkCyan)
 
-    let info(msg: String) =        
-        Console.WriteLine("[+] {0}", msg)
+    let info(msg: String) =
+        let m = "[+] " + msg
+        Console.WriteLine(msg)
 
-    let warning(msg: String) =      
-        Console.ForegroundColor <- ConsoleColor.DarkYellow
-        Console.WriteLine("[-] {0}", msg)
-        Console.ResetColor()
+    let warning(msg: String) =
+        let m = "[-] " + msg
+        printWithColor(m, ConsoleColor.DarkYellow)
 
-    let error(msg: String) =        
-        Console.ForegroundColor <- ConsoleColor.DarkRed
-        Console.WriteLine("[!] {0}", msg)
-        Console.ResetColor()
+    let error(msg: String) =
+        let m = "[!] " + msg
+        printWithColor(m, ConsoleColor.DarkRed)
 
     let _handlers = 
         [

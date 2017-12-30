@@ -101,7 +101,9 @@ module Program =
                         printError(String.Format("File '{0}' not found", fullPath))
                         1
                     else
-                        let proc = Process.Start(fullPath)
+                        let procStartInfo = new ProcessStartInfo(fullPath, UseShellExecute = true)
+                        let proc = Process.Start(procStartInfo)
+                                                
                         runFramework(proc.Id, results)   
                         if not proc.HasExited then
                             proc.Kill()                     

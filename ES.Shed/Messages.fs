@@ -1,6 +1,7 @@
 ﻿namespace ES.Shed
 
 open System
+open System.Reflection
 open Microsoft.Diagnostics
 open System.Diagnostics
 open Microsoft.Diagnostics.Runtime
@@ -46,11 +47,22 @@ type ExtractedManagedModuleEvent(clrModule: ClrModule, bytes: Byte array, isDll:
     member val Module = clrModule with get
     member val Bytes = bytes with get
     member val IsDll = isDll with get
-    member val isExecutable = isExec with get
+    member val IsExecutable = isExec with get
+    member val Assembly: Assembly option = None with get, set
 
     override this.ToString() =
         if not(String.IsNullOrWhiteSpace(clrModule.Name)) then clrModule.Name
         else String.Format("Unnamed module, len: {0}", this.Bytes.Length)
+
+type ExtractedManagedModuleViaMemoryScanEvent(bytes: Byte array, isDll: Boolean, isExec: Boolean) =
+    inherit BaseEvent()
+    member val Bytes = bytes with get
+    member val IsDll = isDll with get
+    member val IsExecutable = isExec with get
+    member val Assembly: Assembly option = None with get, set
+
+    override this.ToString() =
+        String.Format("Extracted module via memory scan, len: {0}", this.Bytes.Length)
 
 type ExtractedProcessModule(procModule: ProcessModule) =
     inherit BaseEvent()

@@ -8,11 +8,11 @@ open System.Reflection
 open System.Collections.Generic
 open Microsoft.Diagnostics.Runtime
 
-type HeapDumper(messageBus: MessageBus) =
+type HeapDumper(settings: HandlerSettings) =
     let _objectsAlreadyAnalyzed = new HashSet<UInt64>()
     let _basePath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
     let _loggedStrings = new HashSet<String>()
-    let (trace, info, _, error) = createLoggers(messageBus)
+    let (trace, info, _, error) = createLoggers(settings.MessageBus)
 
     let isInterestingString(o: HeapObject) =
         if o.Value <> null && o.Value.ToString().Length >= 10 then
@@ -185,7 +185,7 @@ type HeapDumper(messageBus: MessageBus) =
             for objAddr in heap.EnumerateObjectAddresses() do
                 analyzeObjectAddress(objAddr, heap, root, None)
 
-            messageBus.Dispatch(new HeapWalked(root))
+            settings.MessageBus.Dispatch(new HeapWalked(root))
             info("Heap dump completed")
         else
             error("Heap is not walkable")
