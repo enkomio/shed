@@ -1,6 +1,7 @@
 ﻿namespace Shed
 
 open System
+open System.Reflection
 open System.Threading
 open System.IO
 open System.Diagnostics
@@ -14,6 +15,7 @@ module Program =
         | Pid of pid:Int32
         | Exe of file:String
         | Timeout of timeout:Int32
+        | Version
         | Verbose
     with
         interface IArgParserTemplate with
@@ -25,6 +27,7 @@ module Program =
                 | Exe _ -> "a filename to execute and inspect."
                 | Timeout _ -> "wait the given amount of milliseconds before to inspect the process. This is only valid if an exe is specified."
                 | Verbose _ -> "print verbose messages."
+                | Version _ -> "print the Shed version."
 
     let printBanner() =
         Console.ForegroundColor <- ConsoleColor.Cyan        
@@ -42,6 +45,10 @@ module Program =
         Console.ForegroundColor <- ConsoleColor.Red
         Console.WriteLine(errorMsg)
         Console.ResetColor()
+
+    let printVersion() =
+        let version = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).ProductVersion
+        Console.WriteLine("Shed version: {0}", version)
         
     let runFramework(pid: Int32, results: ParseResults<CLIArguments>) =
         let dumpModules = results.Contains(<@ Dump_Modules @>)
@@ -85,6 +92,9 @@ module Program =
                     
             if results.IsUsageRequested then
                 printUsage(parser.PrintUsage())
+                0
+            elif results.Contains(<@ Version @>) then
+                printVersion()
                 0
             else            
                 match results.TryGetResult(<@ Pid @>), results.TryGetResult(<@ Exe @>) with
