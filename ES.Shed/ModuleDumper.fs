@@ -348,8 +348,10 @@ type ModuleDumper(settings: HandlerSettings) =
             messageBus.Dispatch(new ExtractedProcessModule(procModule))        
 
         // inspect runtime modules
-        for clrModule in runtime.Modules do
+        runtime.Modules
+        |> Seq.iter(fun clrModule ->
             extractModule(clrModule, runtime, pid)
+        )            
 
         // memory scan
         scanMemoryForModules(runtime)
