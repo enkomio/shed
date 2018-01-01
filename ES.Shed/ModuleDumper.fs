@@ -237,8 +237,8 @@ type ModuleDumper(settings: HandlerSettings) =
                 if result then
                     // try to fix dynamic assembly
                     if clrModule.IsDynamic then
-                        assemblyBytes.[0] <- byte <| Char.ConvertToUtf32("M", 0)
-                        assemblyBytes.[1] <- byte <| Char.ConvertToUtf32("Z", 0)                    
+                        assemblyBytes.[0] <- M
+                        assemblyBytes.[1] <- Z                    
 
                     match checkAssemblyDumpValidity(assemblyBytes) with
                     | Some assembly ->
