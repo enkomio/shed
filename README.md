@@ -9,13 +9,6 @@ _Shed_ is able to:
 * Save the snapshot of the heap in a JSON format for post-processing
 * Dump all modules that are loaded in memory
 
-
-### Donation please
-
-If you find this project useful, please consider a donation in order to ensure its continuation and improvement. All contributions gratefully accepted.
-
-<a href='https://pledgie.com/campaigns/35054'><img alt='Click here to lend your support to: Shed - .NET runtine inspector and make a donation at pledgie.com !' src='https://pledgie.com/campaigns/35054.png?skin_name=chrome' border='0' ></a>
-
 ## Download
  - [Source code][1]
  - [Download binary][2]
