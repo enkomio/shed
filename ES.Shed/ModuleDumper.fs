@@ -318,29 +318,23 @@ type ModuleDumper(settings: HandlerSettings) =
         GetSystemInfo(&systemInfo)
         let mutable currentBaseAddress = systemInfo.lpMinimumApplicationAddress.ToInt64()
         let mutable size = int32 systemInfo.dwPageSize
-        let maxMemSize = 100000000
 
         while currentBaseAddress < systemInfo.lpMaximumApplicationAddress.ToInt64() do
             let virtualQuery = ref(new VirtualQueryData())
             size <- int32 systemInfo.dwPageSize
             if runtime.DataTarget.DataReader.VirtualQuery(uint64 currentBaseAddress, virtualQuery) then
                 size <- int32 <| (!virtualQuery).Size
-                // max 100 MB
-                if size < maxMemSize then
-                    let (result, assemblyBytes, outSize) = readMemory(runtime, uint64 currentBaseAddress, size)
-                    if result then
-                        assemblyBytes
-                        |> Array.iteri(fun i _ -> 
-                            if isPE(assemblyBytes, i) then
-                                let peBuffer = Array.sub assemblyBytes i (assemblyBytes.Length-i) 
-                                let baseAddress = int32 currentBaseAddress + i
-                                inspectBuffer(peBuffer, runtime, baseAddress)                    
-                        )
-                else
-                    size <- size + maxMemSize
+                let (result, assemblyBytes, outSize) = readMemory(runtime, uint64 currentBaseAddress, size)
+                if result then
+                    assemblyBytes
+                    |> Array.iteri(fun i _ -> 
+                        if isPE(assemblyBytes, i) then
+                            let peBuffer = Array.sub assemblyBytes i (assemblyBytes.Length-i) 
+                            let baseAddress = int32 currentBaseAddress + i
+                            inspectBuffer(peBuffer, runtime, baseAddress)                    
+                    )
             currentBaseAddress <- currentBaseAddress + int64 size 
-
-                                                
+                                                            
     let dumpModules(runtime: ClrRuntime, pid: Int32) =        
         // inspect Process modules
         let proc = Process.GetProcessById(pid)
