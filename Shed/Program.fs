@@ -69,8 +69,8 @@ module Program =
         if shed.Attach(pid) then
             let shedApplication = new ShedApplication(shed)
             [
-                (dumpModules || dumpAll, shedApplication.DumpHeap)
-                (dumpHeap || dumpAll, shedApplication.DumpModules)
+                (dumpModules || dumpAll, shedApplication.DumpModules)
+                (dumpHeap || dumpAll, shedApplication.DumpHeap)
             ] 
             |> List.filter fst
             |> List.map snd
