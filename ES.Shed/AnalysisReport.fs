@@ -32,14 +32,15 @@ type AnalysisReport(settings: HandlerSettings) =
             incr counter
         filename
 
-    let saveFileBuffer(outputDir: String, inName: String, content: Byte array, isDll: Boolean, isExe: Boolean) =
+    let savePeFileBuffer(outputDir: String, inName: String, content: Byte array, isDll: Boolean, isExe: Boolean, isManaged: Boolean) =
+        let subDir = if isManaged then ".NET" else "native"
         let mutable name = inName
         if String.IsNullOrWhiteSpace(name) || not <| Uri.IsWellFormedUriString(name, UriKind.RelativeOrAbsolute) then
             name <- md5(Encoding.Default.GetBytes(name))
             if isDll then name <- name + ".dll"
             elif isExe then name <- name + ".exe"
 
-        let modDir = Path.Combine(outputDir, "Modules")        
+        let modDir = Path.Combine(outputDir, "Modules", subDir)        
         Directory.CreateDirectory(modDir) |> ignore        
         let filename = getUniqueFilename(Path.Combine(modDir, name))
         File.WriteAllBytes(filename, content)
@@ -61,14 +62,14 @@ type AnalysisReport(settings: HandlerSettings) =
                     else tmpName + ".exe"
                 else tmpName
 
-        saveFileBuffer(outputDir, name, modEvent.Bytes, modEvent.IsDll, modEvent.IsExecutable)
+        savePeFileBuffer(outputDir, name, modEvent.Bytes, modEvent.IsDll, modEvent.IsExecutable, true)
 
     let saveMemoryScanModule(outputDir: String, modEvent: ExtractedManagedModuleViaMemoryScanEvent) =
         let name = 
             match modEvent.Assembly with
             | Some assembly when assembly.ManifestModule <> null -> assembly.ManifestModule.ScopeName
             | _ -> Guid.NewGuid().ToString("N") + if modEvent.IsDll then ".dll" else ".exe"
-        saveFileBuffer(outputDir, name, modEvent.Bytes, modEvent.IsDll, modEvent.IsExecutable)
+        savePeFileBuffer(outputDir, name, modEvent.Bytes, modEvent.IsDll, modEvent.IsExecutable, true)
 
     let saveProcessModule(outputDir: String, modEvent: ExtractedProcessModule) =
         let processModule = modEvent.Module

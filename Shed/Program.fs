@@ -107,7 +107,7 @@ module Program =
                     0
                 | None, Some file ->
                     let fullPath = Path.GetFullPath(file)
-                    if not <| File.Exists(file) then
+                    if not <| File.Exists(fullPath) then
                         printError(String.Format("File '{0}' not found", fullPath))
                         1
                     else

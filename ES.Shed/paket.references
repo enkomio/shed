@@ -1,1 +1,3 @@
 ﻿Microsoft.Diagnostics.Runtime
+System.Runtime.Serialization.Json
+System.Reflection.Metadata

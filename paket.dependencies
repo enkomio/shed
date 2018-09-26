@@ -1,5 +1,7 @@
 source https://nuget.org/api/v2
 
-nuget Microsoft.Diagnostics.Runtime >= 0.8.31-beta
+nuget Microsoft.Diagnostics.Runtime
 nuget Argu
 nuget FAKE
+nuget System.Runtime.Serialization.Json
+nuget System.Reflection.Metadata

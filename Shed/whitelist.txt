@@ -1,1 +1,2 @@
 ﻿# All these classes will be logged, even if blacklisted
+System.Byte[]

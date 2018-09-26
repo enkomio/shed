@@ -7,6 +7,9 @@ open System.IO
 open System.Reflection
 open System.Collections.Generic
 open Microsoft.Diagnostics.Runtime
+open System.Runtime.Remoting
+open System.Runtime.InteropServices
+open System.Security
 
 type HeapDumper(settings: HandlerSettings) =
     let _objectsAlreadyAnalyzed = new HashSet<UInt64>()
@@ -68,7 +71,7 @@ type HeapDumper(settings: HandlerSettings) =
     let isPrimitive(clrType: ClrType)   =
         clrType.IsPrimitive || clrType.IsString
                 
-    let rec dumpObjectValue(objValue: Object, clrType: ClrType, objAddr: UInt64, node: HeapObject, heap: ClrHeap) =        
+    let rec dumpObjectValue(clrType: ClrType, objAddr: UInt64, node: HeapObject, heap: ClrHeap) =
         if clrType.IsArray then
             let arrayLength = clrType.GetArrayLength(objAddr)
             let byteArray = new List<Byte>()
@@ -88,6 +91,33 @@ type HeapDumper(settings: HandlerSettings) =
 
                     elif arrayElemValue <> null then
                         analyzeObjectAddress(arrayElemValue :?> UInt64, heap, node, None)
+
+
+        elif clrType.Name.StartsWith("System.Security.SecureString") then
+            // dump all fields
+            dumpAllFields(clrType, objAddr, node, heap)
+
+            // now extract the passwords and add it
+            let mBuffer = clrType.GetFieldByName("m_buffer").GetValue(objAddr)
+            let mLength = clrType.GetFieldByName("m_length").GetValue(objAddr) :?> Int32
+            let bstrClrType = heap.GetObjectType(mBuffer :?> UInt64)
+
+            // compute correct length
+            let mutable correctLength = 2 * mLength
+            if correctLength % 8 <> 0
+            then correctLength <- 2 * (mLength + 8 - (mLength % 8))
+
+            //let bstrValue = bstrClrType.GetValue(mBuffer :?> UInt64)
+            let handle = bstrClrType.GetFieldByName("handle").GetValue(mBuffer :?> UInt64) :?> Int64
+
+            // read the remote password value
+            let passwordArray = Array.zeroCreate<Byte>(correctLength)
+            let tmp = ref 0
+            heap.Runtime.ReadMemory(uint64 handle, passwordArray, passwordArray.Length, tmp) |> ignore
+            let password = Encoding.Unicode.GetString(passwordArray).Substring(0, mLength)
+
+            let passwordObject = createHeapObject(typeof<String>.Name, uint64 handle, password, Some "Password")
+            node.Properties.Add(passwordObject)
                 
         elif clrType.Name.StartsWith("System.Collections.Generic.Dictionary") then            
             let entriesField = clrType.GetFieldByName("entries")
@@ -136,20 +166,23 @@ type HeapDumper(settings: HandlerSettings) =
                                 node.Properties.Add(kvNode)
 
         else
-            // dump all fields of this object (it is not primitive)
-            for clrField in clrType.Fields do
-                let field = clrType.GetFieldByName(clrField.Name)
-                let fieldAddr = field.GetAddress(objAddr)
-                let fieldValue = field.GetValue(objAddr)
-                let name = Some clrField.Name
+            dumpAllFields(clrType, objAddr, node, heap)
+            
+    and dumpAllFields(clrType: ClrType, objAddr: UInt64, node: HeapObject, heap: ClrHeap) =
+        // dump all fields of this object (it is not primitive)
+        for clrField in clrType.Fields do
+            let field = clrType.GetFieldByName(clrField.Name)
+            let fieldAddr = field.GetAddress(objAddr)
+            let fieldValue = field.GetValue(objAddr)
+            let name = Some clrField.Name
 
-                if isValid(field.Type) then                
-                    if isPrimitive(field.Type) then
-                        let fieldNode = createHeapObject(field.Type.Name, fieldAddr, fieldValue, name)
-                        traceString(fieldNode)
-                        node.Properties.Add(fieldNode)
-                    elif fieldValue <> null then
-                        analyzeObjectAddress(fieldValue :?> UInt64, heap, node, name)
+            if isValid(field.Type) then                
+                if isPrimitive(field.Type) then
+                    let fieldNode = createHeapObject(field.Type.Name, fieldAddr, fieldValue, name)
+                    traceString(fieldNode)
+                    node.Properties.Add(fieldNode)
+                elif fieldValue <> null then
+                    analyzeObjectAddress(fieldValue :?> UInt64, heap, node, name)
 
     and analyzeObjectAddress(objAddr: UInt64, heap: ClrHeap, parent: HeapObject, name: String option) =         
         try
@@ -164,7 +197,7 @@ type HeapDumper(settings: HandlerSettings) =
                         if isPrimitive(clrType) then 
                             traceString(node)                        
                         else                        
-                            dumpObjectValue(objValue, clrType, objAddr, node, heap)                        
+                            dumpObjectValue(clrType, objAddr, node, heap)                        
                 else
                     let refNode = createHeapObject(String.Empty, 0uL, null, Some String.Empty)
                     refNode.Reference <- objAddr
@@ -173,15 +206,13 @@ type HeapDumper(settings: HandlerSettings) =
             if not <| e.Message.Contains("Unexpected element type.") then
                 exceptionError(e)
 
-    let handleDumpHeapCommand(command: DumpHeapCommand) =        
+    let handleDumpHeapCommand(command: DumpHeapCommand) =
         let heap = command.Runtime.Value.Heap
         if heap.CanWalkHeap then
             _objectsAlreadyAnalyzed.Clear()
 
-            let root = createHeapObject(String.Empty, 0uL, null, None)
-            let primitiveObjects = new Dictionary<UInt64, ClrType>()
-
             // analyze all objects in the heap
+            let root = createHeapObject(String.Empty, 0uL, null, None)
             for objAddr in heap.EnumerateObjectAddresses() do
                 analyzeObjectAddress(objAddr, heap, root, None)
 
