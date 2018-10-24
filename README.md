@@ -1,5 +1,10 @@
 # Shed - .NET runtime inspector
 
+ <p align="center">
+    <a href="https://github.com/enkomio/shed/releases/latest"><img alt="Release" src="https://img.shields.io/github/release/enkomio/shed.svg?svg=true"></a>   
+    <a href="https://github.com/enkomio/shed/blob/master/LICENSE.md"><img alt="Software License" src="https://img.shields.io/badge/License-CC%20BY%204.0-brightgreen.svg"></a>
+  </p>
+
 _Shed_ is an application that allow to inspect the .NET runtime of a program in order to extract useful information. It can be used to inspect malicious applications in order to have a first general 
 overview of which information are stored once that the malware is executed.
 
