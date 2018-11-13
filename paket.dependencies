@@ -5,3 +5,4 @@ nuget Argu
 nuget FAKE
 nuget System.Runtime.Serialization.Json
 nuget System.Reflection.Metadata
+nuget MDbg
