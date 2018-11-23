@@ -11,7 +11,7 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Diagnostics.SymbolStore;
 using System.Runtime.InteropServices;
-
+using System.Linq;
 using Microsoft.Samples.Debugging.CorDebug;
 using Microsoft.Samples.Debugging.CorMetadata;
 using System.Collections.Generic;
@@ -559,7 +559,7 @@ namespace Microsoft.Samples.Debugging.MdbgEngine
         /// <remarks>
         ///     Resolved is usually called for every loaded module.
         /// </remarks>
-        bool ResolveLocation(MDbgFunctionBreakpoint functionBreakpoint, MDbgModule managedModule, out MDbgFunction managedFunction, out int ilOffset);
+        bool ResolveLocation(MDbgFunctionBreakpoint functionBreakpoint, MDbgModule managedModule, out List<MDbgFunction> managedFunction, out int ilOffset);
     }
 
     /// <summary>
@@ -594,7 +594,7 @@ namespace Microsoft.Samples.Debugging.MdbgEngine
         /// <remarks>
         ///     Resolved is usually called for every loaded module.
         /// </remarks>
-        public bool ResolveLocation(MDbgFunctionBreakpoint functionBreakpoint, MDbgModule managedModule, out MDbgFunction managedFunction, out int ILoffset)
+        public bool ResolveLocation(MDbgFunctionBreakpoint functionBreakpoint, MDbgModule managedModule, out List<MDbgFunction> managedFunction, out int ILoffset)
         {
             Debug.Assert(m_lineNo > 0 && m_file.Length > 0);
 
@@ -624,8 +624,10 @@ namespace Microsoft.Samples.Debugging.MdbgEngine
                     }
 
                     ISymbolMethod symMethod = managedModule.SymReader.GetMethodFromDocumentPosition(doc, lineNo, 0);
-                    managedFunction = managedModule.GetFunction(symMethod.Token.GetToken());
-                    ILoffset = managedFunction.GetIPFromPosition(doc, lineNo);
+                    managedFunction = new List<MDbgFunction>();
+                    var func = managedModule.GetFunction(symMethod.Token.GetToken());
+                    managedFunction.Add(func);
+                    ILoffset = func.GetIPFromPosition(doc, lineNo);
 
                     // If this IL 
                     if (ILoffset == -1)
@@ -709,7 +711,7 @@ namespace Microsoft.Samples.Debugging.MdbgEngine
         /// <remarks>
         ///     Resolved is usually called for every loaded module.
         /// </remarks>
-        public bool ResolveLocation(MDbgFunctionBreakpoint functionBreakpoint, MDbgModule managedModule, out MDbgFunction managedFunction, out int ilOffset)
+        public bool ResolveLocation(MDbgFunctionBreakpoint functionBreakpoint, MDbgModule managedModule, out List<MDbgFunction> managedFunction, out int ilOffset)
         {
             managedFunction = null;
             ilOffset = m_ILoffset;
@@ -720,7 +722,7 @@ namespace Microsoft.Samples.Debugging.MdbgEngine
                     return false;
             }
 
-            managedFunction = functionBreakpoint.m_breakpointCollection.m_process.ResolveFunctionName(managedModule, m_className, m_methodName);
+            managedFunction = functionBreakpoint.m_breakpointCollection.m_process.ResolveFunctionName(managedModule, m_className, m_methodName).ToList();
 
             return managedFunction != null;
         }
@@ -796,7 +798,7 @@ namespace Microsoft.Samples.Debugging.MdbgEngine
         /// <remarks>
         ///     Resolved is usually called for every loaded module.
         /// </remarks>
-        public bool ResolveLocation(MDbgFunctionBreakpoint functionBreakpoint, MDbgModule managedModule, out MDbgFunction managedFunction, out int ilOffset)
+        public bool ResolveLocation(MDbgFunctionBreakpoint functionBreakpoint, MDbgModule managedModule, out List<MDbgFunction> managedFunction, out int ilOffset)
         {
             managedFunction = null;
             ilOffset = -1;
@@ -805,7 +807,8 @@ namespace Microsoft.Samples.Debugging.MdbgEngine
             if (m_function.Module != managedModule)
                 return false;
 
-            managedFunction = m_function;
+            managedFunction = new List<MDbgFunction>();
+            managedFunction.Add(m_function);
             ilOffset = m_ILoffset;
             return true;
         }
@@ -866,7 +869,7 @@ namespace Microsoft.Samples.Debugging.MdbgEngine
                 if (!IsBound)
                     return new ArrayList();
                 else
-                    return (IEnumerable)new List<CorFunctionBreakpoint>(m_breakpoints.Values);
+                    return (IEnumerable)new List<CorFunctionBreakpoint>(m_breakpoints.Values.SelectMany(x => x));
             }
         }
 
@@ -883,7 +886,7 @@ namespace Microsoft.Samples.Debugging.MdbgEngine
                     return null;
                 else
                 {
-                    List<CorFunctionBreakpoint> bps = new List<CorFunctionBreakpoint>(m_breakpoints.Values);
+                    List<CorFunctionBreakpoint> bps = new List<CorFunctionBreakpoint>(m_breakpoints.Values.SelectMany(x => x));
                     return (CorBreakpoint)bps[0];
                 }
             }
@@ -913,7 +916,7 @@ namespace Microsoft.Samples.Debugging.MdbgEngine
                 }
                 else
                 {
-                    List<CorFunctionBreakpoint> bps = new List<CorFunctionBreakpoint>(m_breakpoints.Values);
+                    List<CorFunctionBreakpoint> bps = new List<CorFunctionBreakpoint>(m_breakpoints.Values.SelectMany(x => x));
                     bool active = bps[0].IsActive;
 
                     // all breakpoints have to have same Active Status
@@ -935,7 +938,7 @@ namespace Microsoft.Samples.Debugging.MdbgEngine
 
                 if (m_breakpoints != null)
                 {
-                    foreach (CorFunctionBreakpoint bp in m_breakpoints.Values)
+                    foreach (CorFunctionBreakpoint bp in m_breakpoints.Values.SelectMany(x => x))
                     {
                         try
                         {
@@ -982,6 +985,30 @@ namespace Microsoft.Samples.Debugging.MdbgEngine
             }
         }
 
+        private void SetupBreakpoint(CorFunctionBreakpoint breakpoint, MDbgModule managedModule)
+        {
+            // Add the new CorBreakpoint object to our internal list and register a handler for it.
+            Debug.Assert(breakpoint != null);
+            breakpoint.Activate(true);
+            if (m_breakpoints == null)
+            {
+                m_breakpoints = new Dictionary<MDbgModule, List<CorFunctionBreakpoint>>();
+            }
+            else if (m_breakpoints.ContainsKey(managedModule))
+            {
+                m_breakpoints[managedModule].Add(breakpoint);
+            }
+            else
+            {
+                m_breakpoints[managedModule] = new List<CorFunctionBreakpoint>();
+                m_breakpoints[managedModule].Add(breakpoint);
+            }
+
+            MDbgProcess p = managedModule.Process;
+            CustomBreakpointEventHandler handler = new CustomBreakpointEventHandler(this.InternalOnHitHandler);
+            p.RegisterCustomBreakpoint(breakpoint, handler);
+        }
+
 
         /// <summary>
         /// Function tries to bind a breakpoint to the specified module.
@@ -995,7 +1022,7 @@ namespace Microsoft.Samples.Debugging.MdbgEngine
         /// </remarks>
         public sealed override bool BindToModule(MDbgModule managedModule)
         {
-            MDbgFunction func;
+            List<MDbgFunction> funcs;
             int ILoffset;
 
             // If we already bound a breakpoint in this module then nothing to do
@@ -1003,7 +1030,7 @@ namespace Microsoft.Samples.Debugging.MdbgEngine
                 return false;
 
             // If we can't resolve the location in this module then there is nothing to do
-            if (!m_location.ResolveLocation(this, managedModule, out func, out ILoffset))
+            if (!m_location.ResolveLocation(this, managedModule, out funcs, out ILoffset))
                 return false;
 
             // Use the resolved information to get a raw CorBreakpoint object.
@@ -1012,18 +1039,26 @@ namespace Microsoft.Samples.Debugging.MdbgEngine
             {
                 if (ILoffset == 0)
                 {
-                    breakpoint = func.CorFunction.CreateBreakpoint();
+                    foreach(var func in funcs)
+                    {
+                        breakpoint = func.CorFunction.CreateBreakpoint();
+                        SetupBreakpoint(breakpoint, managedModule);
+                    }                    
                 }
                 else
                 {
-                    // we need to set a breakpoint on code rather than directly on function
-                    CorCode code = func.CorFunction.ILCode;
-
-                    if (code == null)
+                    foreach (var func in funcs)
                     {
-                        throw new MDbgException(String.Format(CultureInfo.InvariantCulture, "IL Code for function {0} is null", new Object[] { func.FullName }));
+                        // we need to set a breakpoint on code rather than directly on function
+                        CorCode code = func.CorFunction.ILCode;
+
+                        if (code == null)
+                        {
+                            throw new MDbgException(String.Format(CultureInfo.InvariantCulture, "IL Code for function {0} is null", new Object[] { func.FullName }));
+                        }
+                        breakpoint = code.CreateBreakpoint(ILoffset);
+                        SetupBreakpoint(breakpoint, managedModule);
                     }
-                    breakpoint = code.CreateBreakpoint(ILoffset);
                 }
             }
             catch (NotImplementedException)
@@ -1034,19 +1069,6 @@ namespace Microsoft.Samples.Debugging.MdbgEngine
             {
                 return false;
             }
-
-            // Add the new CorBreakpoint object to our internal list and register a handler for it.
-            Debug.Assert(breakpoint != null);
-            breakpoint.Activate(true);
-            if (m_breakpoints == null)
-            {
-                m_breakpoints = new Dictionary<MDbgModule, CorFunctionBreakpoint>();
-            }
-            m_breakpoints.Add(managedModule, breakpoint);
-
-            MDbgProcess p = managedModule.Process;
-            CustomBreakpointEventHandler handler = new CustomBreakpointEventHandler(this.InternalOnHitHandler);
-            p.RegisterCustomBreakpoint(breakpoint, handler);
 
             return true;
         }
@@ -1134,6 +1156,6 @@ namespace Microsoft.Samples.Debugging.MdbgEngine
         }
 
         private ISequencePointResolver m_location;
-        private Dictionary<MDbgModule, CorFunctionBreakpoint> m_breakpoints;
+        private Dictionary<MDbgModule, List<CorFunctionBreakpoint>> m_breakpoints;
     }
 }

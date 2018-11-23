@@ -5,6 +5,7 @@
 //---------------------------------------------------------------------
 
 using System;
+using System.Linq;
 using System.Threading;
 using System.Diagnostics;
 using System.Collections;
@@ -1775,24 +1776,23 @@ namespace Microsoft.Samples.Debugging.MdbgEngine
         /// <param name="className">The name of the Class that has the Function.</param>
         /// <param name="functionName">The name of the Function.</param>
         /// <returns>The MDbgFunction that matches the given parameters.</returns>
-        public MDbgFunction ResolveFunctionName(MDbgModule mdbgModule, string className, string functionName)
+        public IEnumerable<MDbgFunction> ResolveFunctionName(MDbgModule mdbgModule, string className, string functionName)
         {
             int typeToken = mdbgModule.Importer.GetTypeTokenFromName(className);
-            if (typeToken == CorMetadataImport.TokenNotFound)
-                return null;
-
-            MDbgFunction func = null;
-
-            Type t = mdbgModule.Importer.GetType(typeToken);
-            foreach (MethodInfo mi in t.GetMethods())
+            if (typeToken != CorMetadataImport.TokenNotFound)
             {
-                if (mi.Name.Equals(functionName))
+                MDbgFunction func = null;
+
+                Type t = mdbgModule.Importer.GetType(typeToken);
+                foreach (MethodInfo mi in t.GetMethods())
                 {
-                    func = mdbgModule.GetFunction((mi as MetadataMethodInfo).MetadataToken);
-                    break;
+                    if (mi.Name.Equals(functionName))
+                    {
+                        func = mdbgModule.GetFunction((mi as MetadataMethodInfo).MetadataToken);
+                        yield return func;
+                    }
                 }
             }
-            return func;
         }
 
         /// <summary>
@@ -1803,13 +1803,13 @@ namespace Microsoft.Samples.Debugging.MdbgEngine
         /// <param name="functionName">The name of the Function.</param>
         /// <param name="appDomain">The AppDomain to look in.</param>
         /// <returns>The MDbgFunction that matches the given parameters.</returns>
-        public MDbgFunction ResolveFunctionName(string moduleName, string className, string functionName, CorAppDomain appDomain)
+        public List<MDbgFunction> ResolveFunctionName(string moduleName, string className, string functionName, CorAppDomain appDomain)
         {
             Debug.Assert(className != null);
             Debug.Assert(functionName != null);
 
 
-            MDbgFunction func = null;
+            List<MDbgFunction> funcs = null;
 
             if (moduleName != null)
             {
@@ -1822,7 +1822,7 @@ namespace Microsoft.Samples.Debugging.MdbgEngine
                         || appDomain == moduleAppDomain // the module is from correct domain
                         )
                     {
-                        func = ResolveFunctionName(module, className, functionName);
+                        funcs = ResolveFunctionName(module, className, functionName).ToList();
                     }
                 }
             }
@@ -1836,14 +1836,14 @@ namespace Microsoft.Samples.Debugging.MdbgEngine
                         || appDomain == moduleAppDomain // the module is from correct domain
                         )
                     {
-                        func = ResolveFunctionName(m, className, functionName);
-                        if (func != null)
+                        funcs = ResolveFunctionName(m, className, functionName).ToList();
+                        if (funcs != null)
                             break;
                     }
                 }
             }
 
-            return func;
+            return funcs;
         }
 
         /// <summary>
@@ -1851,7 +1851,7 @@ namespace Microsoft.Samples.Debugging.MdbgEngine
         /// </summary>
         /// <param name="functionName">The name of the function to resolve.</param>
         /// <returns>The matching MDbgFunction.</returns>
-        public MDbgFunction ResolveFunctionNameFromScope(string functionName)
+        public List<MDbgFunction> ResolveFunctionNameFromScope(string functionName)
         {
             return ResolveFunctionNameFromScope(functionName, Threads.Active.CorThread.AppDomain);
         }
@@ -1862,7 +1862,7 @@ namespace Microsoft.Samples.Debugging.MdbgEngine
         /// <param name="functionName">The name of the function to resolve.</param>
         /// <param name="appDomain">The AppDomain to resolve in.</param>
         /// <returns></returns>
-        public MDbgFunction ResolveFunctionNameFromScope(string functionName, CorAppDomain appDomain)
+        public List<MDbgFunction> ResolveFunctionNameFromScope(string functionName, CorAppDomain appDomain)
         {
             Debug.Assert(functionName != null &&
                          functionName.Length > 0);

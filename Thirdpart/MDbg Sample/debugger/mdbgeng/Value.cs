@@ -696,7 +696,7 @@ namespace Microsoft.Samples.Debugging.MdbgEngine
                                                                          activeThread.CorThread);
 
                             MDbgFunction toStringFunc = m_process.ResolveFunctionName(null, "System.Object", "ToString",
-                                                                             thisValue.ExactType.Class.Module.Assembly.AppDomain);
+                                                                             thisValue.ExactType.Class.Module.Assembly.AppDomain)[0];
 
                             Debug.Assert(toStringFunc != null); // we should be always able to resolve ToString function.
 
