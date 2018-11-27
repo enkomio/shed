@@ -2,7 +2,6 @@
 
 open System
 open System.Reflection
-open Microsoft.Diagnostics
 open System.Diagnostics
 open Microsoft.Diagnostics.Runtime
 
@@ -32,11 +31,18 @@ type DumpModulesCommand() =
     member val Runtime: ClrRuntime option = None with get, set
     member val DataTarget: DataTarget option = None with get, set
     member val ProcessId: Int32 option = None with get, set
+    member val Debugger: ES.Shed.Debugger option = None with get, set
 
 type DumpHeapCommand() =    
     inherit BaseCommand()
     member val Runtime: ClrRuntime option = None with get, set
     member val ProcessId: Int32 option = None with get, set
+
+type ExtractCommand() =    
+    inherit BaseCommand()
+    member val ProcessId: Int32 option = None with get, set
+    member val Executable: String option = None with get, set
+    member val Debugger: ES.Shed.Debugger option = None with get, set
 
 type GenerateReportCommand() =    
     inherit BaseCommand()
@@ -70,6 +76,14 @@ type ExtractedProcessModule(procModule: ProcessModule) =
 
     override this.ToString() =
         string(procModule.ModuleName)
+
+type ExtractedExpression(property: String, value: String) =
+    inherit BaseEvent()
+    member val Property = property with get, set
+    member val Value = value with get, set
+
+type Dispose() =
+    inherit BaseEvent()
 
 type HeapWalked(root: HeapObject) =
     inherit BaseEvent()

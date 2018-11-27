@@ -1,18 +1,15 @@
 ﻿namespace ES.Shed
 
 open System
-open System.Threading
 open System.Text
 open System.IO
-open System.Reflection
 open System.Collections.Generic
 open System.Security.Cryptography
-open Microsoft.Diagnostics.Runtime
-open System.Runtime.Serialization.Json
+open Newtonsoft.Json
 
 type AnalysisReport(settings: HandlerSettings) =
     let _messages = new List<IMessage>()
-    let (trace, info, _, error) = createLoggers(settings.MessageBus)
+    let (_, info, _, _) = createLoggers(settings.MessageBus)
     let _logStringBuilder = new StringBuilder()
     
     let md5(buffer: Byte array) =
@@ -73,7 +70,7 @@ type AnalysisReport(settings: HandlerSettings) =
 
     let saveProcessModule(outputDir: String, modEvent: ExtractedProcessModule) =
         let processModule = modEvent.Module
-        let modDir = Path.Combine(outputDir, "Modules")
+        let modDir = Path.Combine(outputDir, "Modules", "misc")
         Directory.CreateDirectory(modDir) |> ignore
 
         if String.IsNullOrWhiteSpace(processModule.FileName) |> not then
@@ -91,20 +88,19 @@ type AnalysisReport(settings: HandlerSettings) =
                     File.Copy(processModule.FileName, filename)
                     info("Saved module: " + filename)
 
-    let serializeHeap(outputDir: String, root: HeapObject) =
-        // create writer
+    let serializeObject(object, jsonFile: String) =
+        let serializedValue = JsonConvert.SerializeObject(object, Formatting.Indented)
+        File.WriteAllText(jsonFile, serializedValue)
+
+    let serializeHeap(outputDir: String, root: HeapObject) =        
         let jsonFile = Path.Combine(outputDir, "heap.json")
-        use jsonFileHandle = File.OpenWrite(jsonFile)
-        let currentCulture = Thread.CurrentThread.CurrentCulture
-        let jsonWriter = JsonReaderWriterFactory.CreateJsonWriter(jsonFileHandle, Encoding.UTF8, true, true, "  ")
+        serializeObject(root, jsonFile)
+        info("Heap json content saved to file: " + jsonFile)
 
-        // serialize
-        let ser = new DataContractJsonSerializer(typeof<HeapObject>)
-        ser.WriteObject(jsonWriter, root)
-        jsonWriter.Flush()
-
-        Thread.CurrentThread.CurrentCulture <- currentCulture
-        info("Heap json content saved to file: heap.json")
+    let saveExtractedProperty(outputDir: String, extractedExpression: ExtractedExpression) =
+        let jsonFile = Path.Combine(outputDir, "extraction.json")
+        serializeObject(extractedExpression, jsonFile)
+        info("Extracted value saved to: " + jsonFile)
 
     let handleLogMessageEvent(event: LogMessageEvent) = 
         let msg = String.Format("[{0}] {1}", event.Level, event.Message)       
@@ -121,9 +117,10 @@ type AnalysisReport(settings: HandlerSettings) =
             | :? HeapWalked as heapEvent -> serializeHeap(outputDir, heapEvent.Root)
             | :? ExtractedProcessModule as procModuleEvent -> saveProcessModule(outputDir, procModuleEvent)
             | :? ExtractedManagedModuleViaMemoryScanEvent as memScanModEvent -> saveMemoryScanModule(outputDir, memScanModEvent)
+            | :? ExtractedExpression as extractedExpression -> saveExtractedProperty(outputDir, extractedExpression)
             | _ -> ()
 
-        info("Result saved to " + outputDir)
+        info("Result saved to: " + outputDir)
 
         // save log to file
         let logfile = Path.Combine(outputDir, "output.log")
@@ -135,7 +132,8 @@ type AnalysisReport(settings: HandlerSettings) =
         message :? GenerateReportCommand ||
         message :? ExtractedManagedModuleViaMemoryScanEvent ||
         message :? LogMessageEvent ||
-        message :? HeapWalked
+        message :? HeapWalked ||
+        message :? ExtractedExpression
 
     member this.Handle(msg: IMessage) =
         match msg with

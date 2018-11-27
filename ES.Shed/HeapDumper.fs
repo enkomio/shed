@@ -10,7 +10,9 @@ open Microsoft.Diagnostics.Runtime
 open System.Runtime.Remoting
 open System.Runtime.InteropServices
 open System.Security
+open System.Net
 
+// See MS project: https://github.com/Microsoft/perfview/tree/master/src/HeapDump
 type HeapDumper(settings: HandlerSettings) =
     let _objectsAlreadyAnalyzed = new HashSet<UInt64>()
     let _basePath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
@@ -75,7 +77,7 @@ type HeapDumper(settings: HandlerSettings) =
         if clrType.IsArray then
             let arrayLength = clrType.GetArrayLength(objAddr)
             let byteArray = new List<Byte>()
-
+            
             for i=0 to arrayLength-1 do
                 let arrayElemValue = clrType.GetArrayElementValue(objAddr, i)
 
@@ -90,9 +92,10 @@ type HeapDumper(settings: HandlerSettings) =
                             byteArray.Add(arrayElemNode.Value :?> Byte)
 
                     elif arrayElemValue <> null then
-                        analyzeObjectAddress(arrayElemValue :?> UInt64, heap, node, None)
-
-
+                        analyzeObjectAddress(arrayElemValue :?> UInt64, heap, node, None)        
+        
+        (* WIP
+        let dc = heap.Runtime.DataTarget..DebuggerInterface
         elif clrType.Name.StartsWith("System.Security.SecureString") then
             // dump all fields
             dumpAllFields(clrType, objAddr, node, heap)
@@ -116,9 +119,31 @@ type HeapDumper(settings: HandlerSettings) =
             heap.Runtime.ReadMemory(uint64 handle, passwordArray, passwordArray.Length, tmp) |> ignore
             let password = Encoding.Unicode.GetString(passwordArray).Substring(0, mLength)
 
+            ///////////////// 
+            let win32Native = Microsoft.Win32.Registry.ClassesRoot.GetType().Assembly.GetTypes() |> Seq.find(fun tn -> tn.Name.Contains("Win32Native"))
+            let rtlEncryptMemory = win32Native.GetMethod("SystemFunction041", System.Reflection.BindingFlags.NonPublic ||| System.Reflection.BindingFlags.Static)
+            let pinnedAddr = GCHandle.Alloc(passwordArray, GCHandleType.Pinned).AddrOfPinnedObject()
+
+            let safeBSTRHandle = typeof<SecureString>.Assembly.GetTypes() |> Seq.find(fun t -> t.Name.Contains("SafeBSTRHandle"))
+            let allocateMethod = safeBSTRHandle.GetMethod("Allocate", BindingFlags.NonPublic ||| BindingFlags.Static)
+            let allocateMethodResult = allocateMethod.Invoke(null, [|String.Empty :> Object; (uint32 correctLength) :> Object|])
+            allocateMethodResult.GetType().GetField("handle", BindingFlags.NonPublic ||| BindingFlags.Instance).SetValue(allocateMethodResult, pinnedAddr)
+
+            let ss = new SecureString()
+            ss.GetType().GetField("m_buffer", BindingFlags.NonPublic ||| BindingFlags.Instance).SetValue(ss, allocateMethodResult)
+            ss.GetType().GetField("m_length", BindingFlags.NonPublic ||| BindingFlags.Instance).SetValue(ss, mLength)
+            let tmp = new NetworkCredential(String.Empty, ss)
+            let password = tmp.Password
+
+
+            let decryptionResult = rtlEncryptMemory.Invoke(null, [|allocateMethodResult; uint32 correctLength; uint32 0x01|]) 
+            let password = Encoding.Unicode.GetString(passwordArray).Substring(0, mLength)
+            /////////////////
+
             let passwordObject = createHeapObject(typeof<String>.Name, uint64 handle, password, Some "Password")
             node.Properties.Add(passwordObject)
-                
+        
+        *)
         elif clrType.Name.StartsWith("System.Collections.Generic.Dictionary") then            
             let entriesField = clrType.GetFieldByName("entries")
             if entriesField <> null then
@@ -190,7 +215,7 @@ type HeapDumper(settings: HandlerSettings) =
                 if _objectsAlreadyAnalyzed.Add(objAddr) then
                     let clrType = heap.GetObjectType(objAddr)                         
                     if isValid(clrType) then
-                        let objValue = clrType.GetValue(objAddr)
+                        let objValue = clrType.GetValue(objAddr)                        
                         let node = createHeapObject(clrType.Name, objAddr, objValue, name)
                         parent.Properties.Add(node)
 

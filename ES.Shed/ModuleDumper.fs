@@ -51,12 +51,12 @@ type ModuleDumper(settings: HandlerSettings) =
             incr index
         sb.ToString()
 
-    let readMemory(runtime: ClrRuntime, address: UInt64, size: Int32) =        
-        let buffer = Array.zeroCreate<Byte> size 
+    let readMemory(runtime: ClrRuntime, address: UInt64, size: UInt32) =        
+        let buffer = Array.zeroCreate<Byte>(int32 size)
         let mutable result = true
         let outSize = ref 0        
         try
-            result <- runtime.DataTarget.ReadProcessMemory(address, buffer, size, outSize)
+            result <- runtime.DataTarget.ReadProcessMemory(address, buffer, int32 size, outSize)
         with _ -> ()
         
         (result, buffer, !outSize)
@@ -233,7 +233,7 @@ type ModuleDumper(settings: HandlerSettings) =
             // module loaded via reflection
             let virtualQueryData = ref(new VirtualQueryData())
             if runtime.DataTarget.DataReader.VirtualQuery(clrModule.ImageBase, virtualQueryData) then
-                let (result, assemblyBytes, outSize) = readMemory(runtime, clrModule.ImageBase, int32 ((!virtualQueryData).Size))
+                let (result, assemblyBytes, outSize) = readMemory(runtime, clrModule.ImageBase, uint32 ((!virtualQueryData).Size))
                 if result then
                     // try to fix dynamic assembly
                     if clrModule.IsDynamic then
@@ -317,13 +317,14 @@ type ModuleDumper(settings: HandlerSettings) =
         let mutable systemInfo = new SYSTEM_INFO()
         GetSystemInfo(&systemInfo)
         let mutable currentBaseAddress = systemInfo.lpMinimumApplicationAddress.ToInt64()
-        let mutable size = int32 systemInfo.dwPageSize
-
+        let mutable size = uint32 systemInfo.dwPageSize
+        
         while currentBaseAddress < systemInfo.lpMaximumApplicationAddress.ToInt64() do
             let virtualQuery = ref(new VirtualQueryData())
-            size <- int32 systemInfo.dwPageSize
-            if runtime.DataTarget.DataReader.VirtualQuery(uint64 currentBaseAddress, virtualQuery) then
-                size <- int32 <| (!virtualQuery).Size
+            size <- uint32 systemInfo.dwPageSize
+            // limit to 50 MB
+            if size < uint32 500000 && runtime.DataTarget.DataReader.VirtualQuery(uint64 currentBaseAddress, virtualQuery) then
+                size <- uint32 (!virtualQuery).Size                
                 let (result, assemblyBytes, outSize) = readMemory(runtime, uint64 currentBaseAddress, size)
                 if result then
                     assemblyBytes
@@ -350,12 +351,26 @@ type ModuleDumper(settings: HandlerSettings) =
         // memory scan
         scanMemoryForModules(runtime)
 
+    let dumpModulesLoadedByTheDebugger(debugger: ES.Shed.Debugger) =
+        debugger.GetLoadedAssemblies()
+        |> Array.iter(fun peBuffer ->
+            use memStream = new MemoryStream(peBuffer)
+            use pe = PEFile.TryLoad(memStream, false)
+            if pe <> null then
+                let isDll = pe.Header.Characteristics &&& IMAGE_FILE_DLL > uint16 0
+                let isExec = pe.Header.Characteristics &&& IMAGE_FILE_EXECUTABLE_IMAGE > uint16 0
+                let msg = new ExtractedManagedModuleViaMemoryScanEvent(peBuffer, isDll, isExec)
+                messageBus.Dispatch(msg) 
+                info("Extracted Assembly via debugger instrumentation")
+        )
+
     member this.CanHandle(command: IMessage) =
         command :? DumpModulesCommand
 
     member this.Handle(command: IMessage) =
         let dumpCommand = command :?> DumpModulesCommand
-        dumpModules(dumpCommand.Runtime.Value, dumpCommand.ProcessId.Value)
+        dumpModulesLoadedByTheDebugger(dumpCommand.Debugger.Value)
+        dumpModules(dumpCommand.Runtime.Value, dumpCommand.ProcessId.Value)        
 
     interface IMessageHandler with
         member this.CanHandle(command: IMessage) =
