@@ -1,0 +1,2 @@
+﻿System!System.Net.Mail.SmtpClient.set_Credentials
+System!System.Net.NetworkCredential.get_Password value
