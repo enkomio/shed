@@ -1,0 +1,3 @@
+[submodule "Thirdpart/dnlib"]
+	path = Thirdpart/dnlib
+	url = https://github.com/0xd4d/dnlib
