@@ -50,18 +50,33 @@ namespace ES.Shed.ManagedInjector
             {
                 try
                 {
-                    _process = Process.GetProcessById(_pid);
-                    var threadId = Methods.GetWindowThreadProcessId(_process.MainWindowHandle, IntPtr.Zero);
-                    if (threadId > 0)
+                    try
                     {
-                        _hookHandle = InjectIntoThread(threadId);
-                        if (_hookHandle != IntPtr.Zero)
+                        _process = Process.GetProcessById(_pid);
+                    }                        
+                    catch
+                    {
+                        result = InjectionCodes.PidNotValid;
+                    }
+                    
+                    if (_process != null)
+                    {
+                        var threadId = Methods.GetWindowThreadProcessId(_process.MainWindowHandle, IntPtr.Zero);
+                        if (threadId > 0)
                         {
-                            ActivateHook();
-                            if (VerifyInjection(typeof(Injector).Module.Name))
+                            _hookHandle = InjectIntoThread(threadId);
+                            if (_hookHandle != IntPtr.Zero)
                             {
-                                SendInformation(methodToken);
-                                result = InjectionCodes.Success;
+                                ActivateHook();
+                                if (VerifyInjection(typeof(Injector).Module.Name))
+                                {
+                                    SendInformation(methodToken);
+                                    result = InjectionCodes.Success;
+                                }
+                                else
+                                {
+                                    result = InjectionCodes.InjectionFailed;
+                                }
                             }
                             else
                             {
@@ -70,13 +85,9 @@ namespace ES.Shed.ManagedInjector
                         }
                         else
                         {
-                            result = InjectionCodes.InjectionFailed;
+                            result = InjectionCodes.WindowThreadNotFound;
                         }
-                    }
-                    else
-                    {
-                        result = InjectionCodes.WindowThreadNotFound;
-                    }
+                    }                                                       
                 }
                 catch { }
             }            

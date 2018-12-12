@@ -13,6 +13,7 @@ namespace ES.Shed.ManagedInjector
         WindowThreadNotFound,
         InvalidAssemblyBuffer,
         MethodNotFound,
+        PidNotValid,
         UnknownError
     }
 }
