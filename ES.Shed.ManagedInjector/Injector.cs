@@ -50,16 +50,17 @@ namespace ES.Shed.ManagedInjector
             {
                 try
                 {
+                    _process = Process.GetProcessById(_pid);
+                }
+                catch
+                {
+                    result = InjectionCodes.PidNotValid;
+                }
+
+                 
+                if (_process != null)
+                {
                     try
-                    {
-                        _process = Process.GetProcessById(_pid);
-                    }                        
-                    catch
-                    {
-                        result = InjectionCodes.PidNotValid;
-                    }
-                    
-                    if (_process != null)
                     {
                         var threadId = Methods.GetWindowThreadProcessId(_process.MainWindowHandle, IntPtr.Zero);
                         if (threadId > 0)
@@ -87,9 +88,10 @@ namespace ES.Shed.ManagedInjector
                         {
                             result = InjectionCodes.WindowThreadNotFound;
                         }
-                    }                                                       
-                }
-                catch { }
+                    }
+                    catch { }
+                }                                                       
+                
             }            
             return result;
         }
@@ -120,8 +122,11 @@ namespace ES.Shed.ManagedInjector
                     if (methodName.Equals(fullname, StringComparison.OrdinalIgnoreCase))
                     {
                         methodToken = method.MetadataToken;
+                        break;
                     }
                 }
+
+                if (methodToken != 0) break;
             }
             return methodToken;
         }
@@ -155,22 +160,27 @@ namespace ES.Shed.ManagedInjector
 
         private void ActivateHook()
         {
-            Methods.SendMessage(_process.MainWindowHandle, Constants.InjectorMessage, IntPtr.Zero, IntPtr.Zero);
+            SendMessage(IntPtr.Zero, 0);
+        }
+
+        private void SendMessage(IntPtr data, Int32 command)
+        {
+            Methods.SendMessage(_process.MainWindowHandle, Constants.InjectorMessage, data, new IntPtr(command));
         }
 
         private void SendInformation(Int32 methodToken)
         {
-            // send the method token MethodTokenCommand
-            Methods.SendMessage(_process.MainWindowHandle, Constants.InjectorMessage, new IntPtr(methodToken), new IntPtr(MethodTokenCommand));
+            // send the method token
+            SendMessage(new IntPtr(methodToken), MethodTokenCommand);
 
             // send the buffer
             foreach (var b in _sentBuffer)
             {
-                Methods.SendMessage(_process.MainWindowHandle, Constants.InjectorMessage, new IntPtr(b), new IntPtr(ContentCommand));
+                SendMessage(new IntPtr(b), ContentCommand);
             }
 
-            // tell that the oricess is completed
-            Methods.SendMessage(_process.MainWindowHandle, Constants.InjectorMessage, IntPtr.Zero, new IntPtr(CompletedCommand));
+            // tell that the process is completed
+            SendMessage(IntPtr.Zero, CompletedCommand);
         }
 
         private static Object[] CreateArgumentArray(ParameterInfo[] parameters)
