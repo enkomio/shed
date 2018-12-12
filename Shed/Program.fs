@@ -2,18 +2,20 @@
 
 open System
 open System.Reflection
-open System.Threading
 open System.IO
 open System.Diagnostics
 open Argu
 open ES.Shed
 open System.Security.Principal
+open ES.Shed.ManagedInjector
 
-module Program =
+module Program =    
+
     type CLIArguments =
         | Dump_Heap
         | Dump_Modules    
-        | Extract_Expression
+        | Method of method:String
+        //| Extract_Expression
         | Pid of pid:Int32
         | Exe of file:String
         | Timeout of timeout:Int32
@@ -25,7 +27,8 @@ module Program =
                 match s with
                 | Dump_Modules _ -> "dump all the .NET modules from the running program."
                 | Dump_Heap -> "dump all objects found in the heap." 
-                | Extract_Expression -> "evaluate an expression from the specified process/pid."
+                | Method _ -> "inject the given assembly into the specified process and invoke the method."
+                //| Extract_Expression -> "evaluate an expression from the specified process/pid."
                 | Pid _ -> "the id of the process to inspect." 
                 | Exe _ -> "a filename to execute and inspect."
                 | Timeout _ -> "wait the given amount of milliseconds before to inspect or debug the process."
@@ -62,9 +65,10 @@ module Program =
         let timeout = results.GetResult(<@ Timeout @>, 1000)
         let dumpModules = results.Contains(<@ Dump_Modules @>)
         let dumpHeap = results.Contains(<@ Dump_Heap @>)
-        let extractExpression = results.Contains(<@ Extract_Expression @>)        
-        let dumpAll = not dumpModules && not dumpHeap && not extractExpression
+        //let extractExpression = results.Contains(<@ Extract_Expression @>)    
+        let dumpAll = not dumpModules && not dumpHeap // && not extractExpression
 
+        (*
         // as first operation run the extraction with the debugger.
         // It is very important that the extraction is the first command, 
         // otherwise the clrmd framework will hang the debugger
@@ -74,12 +78,12 @@ module Program =
             // run the program to run for timeout milliseconds
             // this will aloows the debugger to catch usefull information
             shedApplication.Run(timeout)
-
+        *)
         // run the remaining option in no particular order
         [            
             (dumpHeap || dumpAll, shedApplication.DumpHeap)
             (dumpModules || dumpAll, shedApplication.DumpModules)                        
-        ] 
+        ]
         |> List.filter fst
         |> List.map snd
         |> List.iter(fun callback -> callback())
@@ -110,9 +114,25 @@ module Program =
         use shed = createShedFramework(results)
         shed.CreateProcess(program) 
         runFramework(shed, results)
+
+    let injectAssembly(pid: Int32, file: String, method: String) =
+        let filename = Path.GetFullPath(file)
+        if not(File.Exists(filename)) then
+            Console.Error.WriteLine("The file '{0}', doesn't exists.", filename)
+            1
+        else
+            let fileContent = File.ReadAllBytes(filename)
+            let injector = new Injector(pid, fileContent, method)
+            match injector.Inject() with
+            | InjectionCodes.Success -> 
+                Console.WriteLine("DLL was correctly injected");
+                0
+            | error -> 
+                Console.Error.WriteLine("Unable to inject the given file. Reason: {0}", error.ToString())
+                1
                 
     [<EntryPoint>]
-    let main argv = 
+    let main argv =
         printBanner()
 
         let parser = ArgumentParser.Create<CLIArguments>(programName = "shed.exe")
@@ -127,14 +147,23 @@ module Program =
                 0
             else            
                 match results.TryGetResult(<@ Pid @>), results.TryGetResult(<@ Exe @>) with
-                | (None, None)
-                | (Some _, Some _) ->
+                | (None, None) ->          
+                    // wrong options
                     printUsage(parser.PrintUsage())   
                     1
+                | (Some pid, Some exe) ->
+                    // maybe inject assembly
+                    match results.TryGetResult(<@ Method @>) with
+                    | Some methodName -> injectAssembly(pid, exe, methodName)
+                    | None ->
+                        printUsage(parser.PrintUsage())   
+                        1
                 | Some pid, None ->
+                    // attach to pid
                     runFrameworkWithPid(pid, results)
                     0
                 | None, Some file ->
+                    // run executable
                     let fullPath = Path.GetFullPath(file)
                     if File.Exists(fullPath) then
                         runFrameworkWithExe(fullPath, results)
