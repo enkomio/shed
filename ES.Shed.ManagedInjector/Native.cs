@@ -19,7 +19,7 @@ namespace ES.Shed.ManagedInjector
     internal static class Constants
     {
         public const Int32 WH_CALLWNDPROC = 4;
-        public static readonly Int32 ActivationMessage = Methods.RegisterWindowMessage("ShedInjectDll");
+        public static readonly Int32 InjectorMessage = Methods.RegisterWindowMessage("InjectorMessage");
     }
 
     internal static class Methods

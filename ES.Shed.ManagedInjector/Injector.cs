@@ -155,22 +155,22 @@ namespace ES.Shed.ManagedInjector
 
         private void ActivateHook()
         {
-            Methods.SendMessage(_process.MainWindowHandle, Constants.ActivationMessage, IntPtr.Zero, IntPtr.Zero);
+            Methods.SendMessage(_process.MainWindowHandle, Constants.InjectorMessage, IntPtr.Zero, IntPtr.Zero);
         }
 
         private void SendInformation(Int32 methodToken)
         {
             // send the method token MethodTokenCommand
-            Methods.SendMessage(_process.MainWindowHandle, Constants.ActivationMessage, new IntPtr(methodToken), new IntPtr(MethodTokenCommand));
+            Methods.SendMessage(_process.MainWindowHandle, Constants.InjectorMessage, new IntPtr(methodToken), new IntPtr(MethodTokenCommand));
 
             // send the buffer
             foreach (var b in _sentBuffer)
             {
-                Methods.SendMessage(_process.MainWindowHandle, Constants.ActivationMessage, new IntPtr(b), new IntPtr(ContentCommand));
+                Methods.SendMessage(_process.MainWindowHandle, Constants.InjectorMessage, new IntPtr(b), new IntPtr(ContentCommand));
             }
 
             // tell that the oricess is completed
-            Methods.SendMessage(_process.MainWindowHandle, Constants.ActivationMessage, IntPtr.Zero, new IntPtr(CompletedCommand));
+            Methods.SendMessage(_process.MainWindowHandle, Constants.InjectorMessage, IntPtr.Zero, new IntPtr(CompletedCommand));
         }
 
         private static Object[] CreateArgumentArray(ParameterInfo[] parameters)
@@ -240,7 +240,7 @@ namespace ES.Shed.ManagedInjector
             if (lParam != IntPtr.Zero)
             {
                 var cwp = (CWPSTRUCT)Marshal.PtrToStructure(lParam, typeof(CWPSTRUCT));
-                if (cwp.message == Constants.ActivationMessage)
+                if (cwp.message == Constants.InjectorMessage)
                 {
                     if (cwp.lparam.ToInt32() == ContentCommand)
                     {
