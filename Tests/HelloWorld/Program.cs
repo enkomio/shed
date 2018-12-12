@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
+using System.Threading;
 
 namespace HelloWorld
 {
@@ -21,9 +23,9 @@ namespace HelloWorld
             var printer = new Printer();
             return printer.GetMessage();
         }
-
+        
         public static void Main(string[] args)
-        {
+        {   
             while (true)
             {
                 var msg = CreateMessage();
