@@ -38,6 +38,10 @@ type ModuleDumper(settings: HandlerSettings) =
     let E = byte <| Char.ConvertToUtf32("E", 0)
 
     let checkAssemblyDumpValidity(buffer: Byte array) =
+        let mi: MethodInfo = null
+        let mb = mi.GetMethodBody()
+        
+
         try
             Some <| Assembly.Load(buffer)
         with :? BadImageFormatException -> None

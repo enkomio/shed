@@ -77,11 +77,11 @@ type Debugger() =
                         _loadedAssemblies.Add(buffer)
         )
 
-    let runProgram(program: String) =
-        let proc = _engine.CreateProcess(program, String.Empty, DebugModeFlag.Debug, null)        
-        // wait for the entry breakpoint to hit
-        proc.Go().WaitOne() |> ignore
+    let runProgram(program: String) =        
+        let proc = _engine.CreateProcess(program, String.Empty, DebugModeFlag.Debug, null)  
         setOnAssemblyLoadedHandler(proc)
+        // wait for the entry breakpoint to hit        
+        proc.Go().WaitOne() |> ignore
         proc
 
     let attachToPid(pid: Int32) =
