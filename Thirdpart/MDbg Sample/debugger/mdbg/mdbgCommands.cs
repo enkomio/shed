@@ -5,6 +5,7 @@
 //---------------------------------------------------------------------
 
 using System;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Reflection;
@@ -2194,7 +2195,7 @@ namespace Microsoft.Samples.Tools.Mdbg
                 appDomain = Debugger.Processes.Active.Threads.Active.CorThread.AppDomain;
             }
 
-            MDbgFunction func = Debugger.Processes.Active.ResolveFunctionNameFromScope(ap.AsString(0), appDomain);
+            MDbgFunction func = Debugger.Processes.Active.ResolveFunctionNameFromScope(ap.AsString(0), appDomain).FirstOrDefault();
             if (null == func)
             {
                 throw new MDbgShellException(String.Format(CultureInfo.InvariantCulture, "Could not resolve {0}", new Object[] { ap.AsString(0) }));
@@ -2281,7 +2282,7 @@ namespace Microsoft.Samples.Tools.Mdbg
             ArgParser ap = new ArgParser(arguments);
 
             string className = ap.AsString(0);
-            MDbgFunction func = Debugger.Processes.Active.ResolveFunctionName(null, className, ".ctor", Debugger.Processes.Active.Threads.Active.CorThread.AppDomain);
+            MDbgFunction func = Debugger.Processes.Active.ResolveFunctionName(null, className, ".ctor", Debugger.Processes.Active.Threads.Active.CorThread.AppDomain).FirstOrDefault();
             if (null == func)
                 throw new MDbgShellException(String.Format(CultureInfo.InvariantCulture, "Could not resolve {0}", ap.AsString(0)));
 

@@ -1142,7 +1142,7 @@ namespace Microsoft.Samples.Debugging.MdbgEngine
             m_stopGo = new V2StopGoController(this);
 
             int flags = (int)(m_engine.Options.CreateProcessWithNewConsole ? CreateProcessFlags.CREATE_NEW_CONSOLE : 0);
-
+            
             try
             {
                 m_corProcess = m_corDebugger.CreateProcess(commandLine, commandArguments, workingDirectory, flags, target);
