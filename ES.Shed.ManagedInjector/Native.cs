@@ -42,6 +42,12 @@ namespace ES.Shed.ManagedInjector
         [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true, CallingConvention = CallingConvention.StdCall)]
         public static extern Int32 RegisterWindowMessage(String lpString);
 
+        [DllImport("user32.dll")]
+        public static extern IntPtr FindWindowEx(IntPtr parentWindow, IntPtr previousChildWindow, string windowClass, string windowTitle);
+
+        [DllImport("user32.dll")]
+        public static extern IntPtr GetWindowThreadProcessId(IntPtr window, out int process);
+
         [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true, CallingConvention = CallingConvention.StdCall)]
         public static extern IntPtr LoadLibrary(String lpFileName);
 

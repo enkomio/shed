@@ -17,13 +17,14 @@ namespace ES.Shed.ManagedInjector
         private static readonly Int32 CompletedCommand = 2;
         private static readonly Int32 MethodTokenCommand = 3;
 
-        private static IntPtr _hookHandle = IntPtr.Zero;        
+        private static IntPtr _hookHandle = IntPtr.Zero;
         private static readonly List<Byte> _receivedBuffer = new List<Byte>();
         private static Int32 _receivedMethodToken = 0;
-        
+
         private readonly Int32 _pid;
         private readonly Byte[] _sentBuffer;
         private Process _process = null;
+        private IntPtr _processHandle = IntPtr.Zero;
         private String _methodName = null;
 
         public Injector(Int32 pid, Byte[] buffer, String methodName)
@@ -31,7 +32,7 @@ namespace ES.Shed.ManagedInjector
             _pid = pid;
             _sentBuffer = buffer;
             _methodName = methodName;
-        }
+        }        
 
         public InjectionCodes Inject()
         {
@@ -57,22 +58,32 @@ namespace ES.Shed.ManagedInjector
                     result = InjectionCodes.PidNotValid;
                 }
 
-                 
+
                 if (_process != null)
                 {
                     try
                     {
-                        var threadId = Methods.GetWindowThreadProcessId(_process.MainWindowHandle, IntPtr.Zero);
-                        if (threadId > 0)
+                        UInt32 threadId = 0;
+                        foreach (var windowHandle in GetProcessWindows(_pid))
                         {
-                            _hookHandle = InjectIntoThread(threadId);
-                            if (_hookHandle != IntPtr.Zero)
+                            _processHandle = windowHandle;
+                            threadId = Methods.GetWindowThreadProcessId(windowHandle, IntPtr.Zero);
+                            if (threadId > 0)
                             {
-                                ActivateHook();
-                                if (VerifyInjection(typeof(Injector).Module.Name))
+                                _hookHandle = InjectIntoThread(threadId);
+                                if (_hookHandle != IntPtr.Zero)
                                 {
-                                    SendInformation(methodToken);
-                                    result = InjectionCodes.Success;
+                                    ActivateHook();
+                                    if (VerifyInjection(typeof(Injector).Module.Name))
+                                    {
+                                        SendInformation(methodToken);
+                                        result = InjectionCodes.Success;
+                                        break;
+                                    }
+                                    else
+                                    {
+                                        result = InjectionCodes.InjectionFailed;
+                                    }
                                 }
                                 else
                                 {
@@ -81,19 +92,36 @@ namespace ES.Shed.ManagedInjector
                             }
                             else
                             {
-                                result = InjectionCodes.InjectionFailed;
+                                result = InjectionCodes.WindowThreadNotFound;
                             }
-                        }
-                        else
-                        {
-                            result = InjectionCodes.WindowThreadNotFound;
                         }
                     }
                     catch { }
-                }                                                       
-                
-            }            
+                }
+
+            }
             return result;
+        }
+
+        private IntPtr[] GetProcessWindows(Int32 pid)
+        {
+            // Yes, I copied this piece of code from StackOverFlow
+            // src: https://stackoverflow.com/a/25152035/1422545
+            var apRet = new List<IntPtr>();
+            var pLast = IntPtr.Zero;
+            var currentPid = 0;
+
+            do
+            {
+                pLast = Methods.FindWindowEx(IntPtr.Zero, pLast, null, null);                
+                Methods.GetWindowThreadProcessId(pLast, out currentPid);
+
+                if (currentPid == pid)
+                    apRet.Add(pLast);
+
+            } while (pLast != IntPtr.Zero);
+
+            return apRet.ToArray();
         }
 
         private (String, Int32) GetModuleNameAndMethodToken()
@@ -113,10 +141,10 @@ namespace ES.Shed.ManagedInjector
         private Int32 GetMethodToken(Assembly assembly, String methodName)
         {
             var methodToken = 0;
-            foreach(var type in assembly.GetTypes())
+            foreach (var type in assembly.GetTypes())
             {
                 var typeName = type.FullName;
-                foreach(var method in type.GetMethods(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static))
+                foreach (var method in type.GetMethods(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static))
                 {
                     var fullname = String.Format("{0}.{1}", typeName, method.Name);
                     if (methodName.Equals(fullname, StringComparison.OrdinalIgnoreCase))
@@ -147,15 +175,15 @@ namespace ES.Shed.ManagedInjector
             }
             return moduleFound;
         }
-        
+
         private IntPtr InjectIntoThread(UInt32 threadId)
         {
             var thisModule = typeof(Injector).Module;
             var moduleHandle = Methods.LoadLibrary(thisModule.Name);
-            
+
             // get addr exported function
             var hookProc = Methods.GetProcAddress(moduleHandle, "HookProc");
-            return Methods.SetWindowsHookEx(Constants.WH_CALLWNDPROC, hookProc, moduleHandle, threadId);            
+            return Methods.SetWindowsHookEx(Constants.WH_CALLWNDPROC, hookProc, moduleHandle, threadId);
         }
 
         private void ActivateHook()
@@ -165,7 +193,7 @@ namespace ES.Shed.ManagedInjector
 
         private void SendMessage(IntPtr data, Int32 command)
         {
-            Methods.SendMessage(_process.MainWindowHandle, Constants.InjectorMessage, data, new IntPtr(command));
+            Methods.SendMessage(_processHandle, Constants.InjectorMessage, data, new IntPtr(command));
         }
 
         private void SendInformation(Int32 methodToken)
@@ -186,7 +214,7 @@ namespace ES.Shed.ManagedInjector
         private static Object[] CreateArgumentArray(ParameterInfo[] parameters)
         {
             var parameterValues = new List<Object>();
-            foreach(var parameter in parameters)
+            foreach (var parameter in parameters)
             {
                 if (parameter.ParameterType == typeof(String))
                 {
@@ -230,7 +258,7 @@ namespace ES.Shed.ManagedInjector
             try
             {
                 var assembly = Assembly.Load(_receivedBuffer.ToArray());
-                foreach(var module in assembly.Modules)
+                foreach (var module in assembly.Modules)
                 {
                     try
                     {
@@ -243,7 +271,7 @@ namespace ES.Shed.ManagedInjector
             }
             catch { }
         }
-        
+
         [DllExport]
         public static IntPtr HookProc(Int32 code, IntPtr wParam, IntPtr lParam)
         {
