@@ -124,7 +124,7 @@ module Program =
             let fileContent = File.ReadAllBytes(filename)
             let injector = new Injector(pid, fileContent, method)
             match injector.Inject() with
-            | InjectionCodes.Success -> 
+            | InjectionResult.Success -> 
                 Console.WriteLine("DLL was correctly injected");
                 0
             | error -> 
@@ -153,11 +153,8 @@ module Program =
                     1
                 | (Some pid, Some exe) ->
                     // maybe inject assembly
-                    match results.TryGetResult(<@ Method @>) with
-                    | Some methodName -> injectAssembly(pid, exe, methodName)
-                    | None ->
-                        printUsage(parser.PrintUsage())   
-                        1
+                    let methodName = results.GetResult(<@ Method @>, String.Empty)
+                    injectAssembly(pid, exe, methodName)
                 | Some pid, None ->
                     // attach to pid
                     runFrameworkWithPid(pid, results)

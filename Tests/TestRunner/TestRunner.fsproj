@@ -65,11 +65,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\ES.Shed.AssemblyInspector\ES.Shed.AssemblyInspector.fsproj">
-      <Name>ES.Shed.AssemblyInspector</Name>
-      <Project>{8b7277c0-84a4-4c6c-93ef-4cffe1b7f437}</Project>
-      <Private>True</Private>
-    </ProjectReference>
     <ProjectReference Include="..\..\ES.Shed.ManagedInjector\ES.Shed.ManagedInjector.csproj">
       <Name>ES.Shed.ManagedInjector</Name>
       <Project>{510b909d-256d-4a13-b64c-092ae344dbda}</Project>

@@ -6,7 +6,6 @@ open ES.Shed
 open Microsoft.Diagnostics.Runtime
 open Microsoft.Diagnostics.Runtime.ICorDebug
 open System.Threading.Tasks
-open ES.Shed.AssemblyInspector
 open System.Diagnostics.Contracts
 open ES.Shed.ManagedInjector
 open System.Threading
@@ -44,7 +43,7 @@ let testManagedInjection<'T>() =
     let injector = new Injector(proc.Id, buffer, "SmtpClientCredentials.MailSender.Send")
     let injectionResult = injector.Inject()
     proc.Kill()
-    Contract.Assert((injectionResult = InjectionCodes.Success))
+    Contract.Assert((injectionResult = InjectionResult.Success))
     Console.WriteLine("Injection successful")    
 
 [<EntryPoint>]

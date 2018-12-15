@@ -50,8 +50,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "mdbgext", "Thirdpart\MDbg S
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "dnlib", "Thirdpart\dnlib\src\dnlib.csproj", "{F70031DD-C41F-4559-A555-FB33AED501B4}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ES.Shed.AssemblyInspector", "ES.Shed.AssemblyInspector\ES.Shed.AssemblyInspector.fsproj", "{8B7277C0-84A4-4C6C-93EF-4CFFE1B7F437}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ES.Shed.ManagedInjector", "ES.Shed.ManagedInjector\ES.Shed.ManagedInjector.csproj", "{510B909D-256D-4A13-B64C-092AE344DBDA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WindowsFormHelloWorld", "Tests\WindowsFormHelloWorld\WindowsFormHelloWorld.csproj", "{BC0734E8-1B50-4A91-B83C-1E0EEF9E3BAD}"
@@ -134,10 +132,6 @@ Global
 		{F70031DD-C41F-4559-A555-FB33AED501B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F70031DD-C41F-4559-A555-FB33AED501B4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F70031DD-C41F-4559-A555-FB33AED501B4}.Release|Any CPU.Build.0 = Release|Any CPU
-		{8B7277C0-84A4-4C6C-93EF-4CFFE1B7F437}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8B7277C0-84A4-4C6C-93EF-4CFFE1B7F437}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8B7277C0-84A4-4C6C-93EF-4CFFE1B7F437}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8B7277C0-84A4-4C6C-93EF-4CFFE1B7F437}.Release|Any CPU.Build.0 = Release|Any CPU
 		{510B909D-256D-4A13-B64C-092AE344DBDA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{510B909D-256D-4A13-B64C-092AE344DBDA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{510B909D-256D-4A13-B64C-092AE344DBDA}.Release|Any CPU.ActiveCfg = Release|Any CPU
