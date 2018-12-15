@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ES.Shed.ManagedInjector
 {
@@ -15,13 +11,7 @@ namespace ES.Shed.ManagedInjector
         public int message;
         public IntPtr hwnd;
     }
-
-    internal static class Constants
-    {
-        public const Int32 WH_CALLWNDPROC = 4;
-        public static readonly Int32 InjectorMessage = Methods.RegisterWindowMessage("InjectorMessage");
-    }
-
+    
     internal static class Methods
     {   
         [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true, CallingConvention = CallingConvention.StdCall)]
