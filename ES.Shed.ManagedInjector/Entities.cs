@@ -58,6 +58,7 @@ namespace ES.Shed.ManagedInjector
         public static readonly String Ping = "PING";
         public static readonly String Token = "TOKEN"; 
         public static readonly String Assembly = "ASSEMBLY";
+        public static readonly String Dependency = "DEPENDENCY";
         public static readonly String Run = "RUN";
     }
 
@@ -70,6 +71,8 @@ namespace ES.Shed.ManagedInjector
         MethodNotFound = 4,
         PidNotValid = 5,
         UnknownError = 6,
-        UnableToConnectToNamedPipe = 7
+        UnableToConnectToNamedPipe = 7,
+        ErrorDuringInvocation = 8,
+        InvalidAssemblyDependencyBuffer = 9,
     }
 }

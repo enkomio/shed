@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO.Pipes;
 using System.Reflection;
 
@@ -8,15 +9,16 @@ namespace ES.Shed.ManagedInjector
     {
         private readonly NamedPipeClientStream _client = new NamedPipeClientStream(".", Constants.NamedPipeCode.ToString("X"), PipeDirection.InOut);
         private readonly PipeChanell _pipeChanell = null;
-
+        private readonly List<Byte[]> _dependencies = null;
         private readonly Byte[] _assemblyContent;
         private readonly String _methodName = null;
         private InjectionResult _lastError = InjectionResult.Success;        
         
-        public Client(Byte[] assemblyContent, String methodName)
+        public Client(Byte[] assemblyContent, String methodName, List<Byte[]> dependencies)
         {
             _assemblyContent = assemblyContent;
             _methodName = methodName;
+            _dependencies = dependencies;
             _pipeChanell = new PipeChanell(_client);
         }
 
@@ -27,19 +29,16 @@ namespace ES.Shed.ManagedInjector
                 _client.Connect(3000);
                 if (_client.IsConnected)
                 {
-                    // send assembly and run it               
-                    var result =
+                    // send assembly and run it  
+                    var invocationResult = 
                         _pipeChanell.SendMessage(Constants.Ping) &&
+                        SendDependencies() &&
                         SendToken() &&
-                        SendAssembly() &&
+                        SendAssembly() &&                        
                         _pipeChanell.SendMessage(Constants.Run);
 
                     _client.Dispose();
-
-                    if (result)
-                    {
-                        SetLastError();
-                    }
+                    SetLastError();
                 }
                 else
                 {
@@ -103,6 +102,17 @@ namespace ES.Shed.ManagedInjector
                 methodToken = GetSpecificMethodToken(assembly, methodName);
             }
             return methodToken;
+        }
+
+        private Boolean SendDependencies()
+        {
+            var result = true;
+            foreach(var dependency in _dependencies)
+            {
+                var stringBuffer = Convert.ToBase64String(dependency);
+                result = result && _pipeChanell.SendMessage(Constants.Dependency, stringBuffer);
+            }
+            return result;
         }
 
         private Boolean SendAssembly()

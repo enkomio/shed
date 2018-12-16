@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO.Pipes;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ES.Shed.ManagedInjector
@@ -11,6 +12,7 @@ namespace ES.Shed.ManagedInjector
     {
         private readonly NamedPipeServerStream _server = new NamedPipeServerStream(Constants.NamedPipeCode.ToString("X"), PipeDirection.InOut);
         private readonly PipeChanell _pipeChanell = null;
+        private readonly Dictionary<String, Assembly> _dependencies = new Dictionary<String, Assembly>();
 
         private InjectionResult _lastError = InjectionResult.Success;
         private Int32 _metadataToken = 0;
@@ -19,6 +21,8 @@ namespace ES.Shed.ManagedInjector
         public Server()
         {
             _pipeChanell = new PipeChanell(_server);
+            AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve += ResolveAssembly;
+            AppDomain.CurrentDomain.AssemblyResolve += ResolveAssembly;
         }
 
         public void ProcessCommands()
@@ -35,6 +39,13 @@ namespace ES.Shed.ManagedInjector
             _server.Dispose();
         }
 
+        private Assembly ResolveAssembly(Object sender, ResolveEventArgs e)
+        {
+            Assembly res;
+            _dependencies.TryGetValue(e.Name, out res);
+            return res;
+        }
+
         private Boolean ProcessCommand(PipeMessage msg)
         {
             var exit = false;
@@ -46,6 +57,22 @@ namespace ES.Shed.ManagedInjector
             else if (msgType.Equals(Constants.Assembly, StringComparison.OrdinalIgnoreCase))
             {
                 _assemblyBuffer = Convert.FromBase64String(msg.GetData());
+            }
+            else if (msgType.Equals(Constants.Dependency, StringComparison.OrdinalIgnoreCase))
+            {                
+                try
+                {
+                    var assemblyBuffer = Convert.FromBase64String(msg.GetData());
+                    var assembly = Assembly.Load(assemblyBuffer);
+                    if (!_dependencies.ContainsKey(assembly.FullName))
+                    {
+                        _dependencies.Add(assembly.FullName, assembly);
+                    }                    
+                }
+                catch
+                {
+                    _lastError = InjectionResult.InvalidAssemblyDependencyBuffer;
+                }
             }
             else if (msgType.Equals(Constants.Run, StringComparison.OrdinalIgnoreCase))
             {
@@ -68,7 +95,7 @@ namespace ES.Shed.ManagedInjector
             var parameterValues = new List<Object>();
             foreach (var parameter in parameters)
             {
-                if (parameter.ParameterType == typeof(String))
+                if (parameter.ParameterType.IsPrimitive)
                 {
                     parameterValues.Add(String.Empty);
                 }
@@ -83,8 +110,7 @@ namespace ES.Shed.ManagedInjector
             }
             return parameterValues.ToArray();
         }
-
-
+        
         private void InvokeMethod(MethodBase method)
         {
             try
@@ -103,11 +129,19 @@ namespace ES.Shed.ManagedInjector
                     }
                 }
                 // invoke the method           
-                Task.Factory.StartNew(() => method.Invoke(thisObj, arguments), TaskCreationOptions.LongRunning);
+                var task = Task.Factory.StartNew(() => method.Invoke(thisObj, arguments), TaskCreationOptions.LongRunning);
+
+                // wait one second to grab early execution exceptions
+                Thread.Sleep(1000);
+
+                if (task.Exception != null)
+                {
+                    _lastError = InjectionResult.ErrorDuringInvocation;
+                }
             }
             catch
             {
-                _lastError = InjectionResult.UnknownError;
+                _lastError = InjectionResult.ErrorDuringInvocation;
             }
         }
 
@@ -119,7 +153,6 @@ namespace ES.Shed.ManagedInjector
                 try
                 {
                     methodToInvoke = module.ResolveMethod(_metadataToken);
-                    InvokeMethod(methodToInvoke);
                     break;
                 }
                 catch { }
