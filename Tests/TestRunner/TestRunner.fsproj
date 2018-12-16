@@ -80,6 +80,11 @@
       <Project>{75c434f2-39c8-466e-9ee6-16aca688f45b}</Project>
       <Private>True</Private>
     </ProjectReference>
+    <ProjectReference Include="..\AssemblyWithDependency\AssemblyWithDependency.csproj">
+      <Name>AssemblyWithDependency</Name>
+      <Project>{ce79fe03-b466-4be8-89f7-3994eda870d7}</Project>
+      <Private>True</Private>
+    </ProjectReference>
     <ProjectReference Include="..\HelloWorld\HelloWorld.csproj">
       <Name>HelloWorld</Name>
       <Project>{f32c73ac-4b90-4a68-b1bb-00bfdc7edba3}</Project>

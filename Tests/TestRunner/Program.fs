@@ -36,11 +36,19 @@ let testAssemblyInspector() =
     let information = assemblyInspector.Run()
     Contract.Assert(information |> Array.contains(NetworkCredentialPassword "my_password"))
     *)
-let testManagedInjection<'T>() =
-    let proc = Process.Start(typeof<'T>.Assembly.Location)
-    let buffer = File.ReadAllBytes(typeof<SmtpClientCredentials.Program>.Assembly.Location)
-    Thread.Sleep(1000)
-    let injector = new Injector(proc.Id, buffer, "SmtpClientCredentials.MailSender.Send")
+
+let testManagedInjection() =  
+    let assemblyFile = Path.GetFullPath(Path.Combine("..", "..", "..", "WindowsFormHelloWorld", "bin", "Debug", "WindowsFormHelloWorld.exe"))
+    let assemblyExecute = Assembly.LoadFile(assemblyFile)
+    
+    let assemblyDir = Path.GetDirectoryName(assemblyExecute.Location)
+    Directory.SetCurrentDirectory(assemblyDir)
+
+    let procInfo = new ProcessStartInfo(assemblyExecute.Location, WorkingDirectory = assemblyDir)
+    let proc = Process.Start(procInfo)    
+    Thread.Sleep(1000)    
+
+    let injector = new Injector(proc.Id, typeof<AssemblyWithDependency.Main>.Assembly, "AssemblyWithDependency.Main.Run")
     let injectionResult = injector.Inject()
     proc.Kill()
     Contract.Assert((injectionResult = InjectionResult.Success))
@@ -49,7 +57,7 @@ let testManagedInjection<'T>() =
 [<EntryPoint>]
 let main argv = 
     try
-        testManagedInjection<WindowsFormHelloWorld.MainForm>()        
+        testManagedInjection()        
 
         //testAssemblyInspector()
         //dumpHeapTestCase<HelloWorld.Program>()
