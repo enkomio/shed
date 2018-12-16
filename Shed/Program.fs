@@ -121,8 +121,8 @@ module Program =
             Console.Error.WriteLine("The file '{0}', doesn't exists.", filename)
             1
         else
-            let fileContent = File.ReadAllBytes(filename)
-            let injector = new Injector(pid, fileContent, method)
+            let assembly = Assembly.Load(filename)
+            let injector = new Injector(pid, assembly, method)
             match injector.Inject() with
             | InjectionResult.Success -> 
                 Console.WriteLine("DLL was correctly injected");
