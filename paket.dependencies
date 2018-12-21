@@ -5,5 +5,3 @@ nuget Argu
 nuget FAKE
 nuget Newtonsoft.Json
 nuget System.Reflection.Metadata
-nuget Lib.Harmony
-nuget UnmanagedExports
