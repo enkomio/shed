@@ -38,10 +38,6 @@ type ModuleDumper(settings: HandlerSettings) =
     let E = byte <| Char.ConvertToUtf32("E", 0)
 
     let checkAssemblyDumpValidity(buffer: Byte array) =
-        let mi: MethodInfo = null
-        let mb = mi.GetMethodBody()
-        
-
         try
             Some <| Assembly.Load(buffer)
         with :? BadImageFormatException -> None
@@ -55,15 +51,16 @@ type ModuleDumper(settings: HandlerSettings) =
             incr index
         sb.ToString()
 
-    let readMemory(runtime: ClrRuntime, address: UInt64, size: UInt32) =        
-        let buffer = Array.zeroCreate<Byte>(int32 size)
+    let readMemory(runtime: ClrRuntime, address: UInt64, size: UInt32) =                    
         let mutable result = true
-        let outSize = ref 0        
+        let outSize = ref 0    
+
         try
+            let buffer = Array.zeroCreate<Byte>(int32 size)
             result <- runtime.DataTarget.ReadProcessMemory(address, buffer, int32 size, outSize)
-        with _ -> ()
-        
-        (result, buffer, !outSize)
+            (result, buffer, !outSize)
+        with _ ->
+            (result, Array.empty<Byte>, !outSize)
 
     let getThunkData(offset: Int32, index: Int32, section: Section, carvedPe: Byte array) =
         let sizeOfThunkData = Marshal.SizeOf(typeof<IMAGE_THUNK_DATA32>)
@@ -304,7 +301,6 @@ type ModuleDumper(settings: HandlerSettings) =
                     let isDll = pe.Header.Characteristics &&& IMAGE_FILE_DLL > uint16 0
                     let isExec = pe.Header.Characteristics &&& IMAGE_FILE_EXECUTABLE_IMAGE > uint16 0
                     messageBus.Dispatch(new ExtractedManagedModuleViaMemoryScanEvent(carvedBuffer, isDll, isExec)) 
-                    info("Carved Module via memory scan")
             | None -> ()
 
     let isPE(buffer: Byte array, offset: Int32) =
@@ -323,21 +319,25 @@ type ModuleDumper(settings: HandlerSettings) =
         let mutable currentBaseAddress = systemInfo.lpMinimumApplicationAddress.ToInt64()
         let mutable size = uint32 systemInfo.dwPageSize
         
-        while currentBaseAddress < systemInfo.lpMaximumApplicationAddress.ToInt64() do
+        while currentBaseAddress < systemInfo.lpMaximumApplicationAddress.ToInt64() do            
             let virtualQuery = ref(new VirtualQueryData())
             size <- uint32 systemInfo.dwPageSize
-            // limit to 50 MB
-            if size < uint32 500000 && runtime.DataTarget.DataReader.VirtualQuery(uint64 currentBaseAddress, virtualQuery) then
-                size <- uint32 (!virtualQuery).Size                
-                let (result, assemblyBytes, outSize) = readMemory(runtime, uint64 currentBaseAddress, size)
-                if result then
-                    assemblyBytes
-                    |> Array.iteri(fun i _ -> 
-                        if isPE(assemblyBytes, i) then
-                            let peBuffer = Array.sub assemblyBytes i (assemblyBytes.Length-i) 
-                            let baseAddress = int32 currentBaseAddress + i
-                            inspectBuffer(peBuffer, runtime, baseAddress)                    
-                    )
+            
+            if runtime.DataTarget.DataReader.VirtualQuery(uint64 currentBaseAddress, virtualQuery) then
+                try
+                    size <- uint32 (!virtualQuery).Size                
+                    let (result, assemblyBytes, outSize) = readMemory(runtime, uint64 currentBaseAddress, size)
+                    if result then
+                        let mutable peCarved = false
+                        assemblyBytes
+                        |> Array.iteri(fun i _ -> 
+                            if not peCarved && isPE(assemblyBytes, i) then
+                                let peBuffer = Array.sub assemblyBytes i (assemblyBytes.Length-i) 
+                                let baseAddress = int32 currentBaseAddress + i
+                                inspectBuffer(peBuffer, runtime, baseAddress)   
+                                peCarved <- true
+                        )
+                with _ -> ()
             currentBaseAddress <- currentBaseAddress + int64 size 
                                                             
     let dumpModules(runtime: ClrRuntime, pid: Int32) =        
@@ -354,26 +354,12 @@ type ModuleDumper(settings: HandlerSettings) =
 
         // memory scan
         scanMemoryForModules(runtime)
-
-    let dumpModulesLoadedByTheDebugger(debugger: ES.Shed.Debugger) =
-        debugger.GetLoadedAssemblies()
-        |> Array.iter(fun peBuffer ->
-            use memStream = new MemoryStream(peBuffer)
-            use pe = PEFile.TryLoad(memStream, false)
-            if pe <> null then
-                let isDll = pe.Header.Characteristics &&& IMAGE_FILE_DLL > uint16 0
-                let isExec = pe.Header.Characteristics &&& IMAGE_FILE_EXECUTABLE_IMAGE > uint16 0
-                let msg = new ExtractedManagedModuleViaMemoryScanEvent(peBuffer, isDll, isExec)
-                messageBus.Dispatch(msg) 
-                info("Extracted Assembly via debugger instrumentation")
-        )
-
+        
     member this.CanHandle(command: IMessage) =
         command :? DumpModulesCommand
 
     member this.Handle(command: IMessage) =
         let dumpCommand = command :?> DumpModulesCommand
-        dumpModulesLoadedByTheDebugger(dumpCommand.Debugger.Value)
         dumpModules(dumpCommand.Runtime.Value, dumpCommand.ProcessId.Value)        
 
     interface IMessageHandler with

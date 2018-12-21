@@ -70,7 +70,7 @@ type AnalysisReport(settings: HandlerSettings) =
 
     let saveProcessModule(outputDir: String, modEvent: ExtractedProcessModule) =
         let processModule = modEvent.Module
-        let modDir = Path.Combine(outputDir, "Modules", "misc")
+        let modDir = Path.Combine(outputDir, "Modules", "Misc")
         Directory.CreateDirectory(modDir) |> ignore
 
         if String.IsNullOrWhiteSpace(processModule.FileName) |> not then
@@ -107,7 +107,10 @@ type AnalysisReport(settings: HandlerSettings) =
         _logStringBuilder.AppendLine(msg) |> ignore
 
     let generateReport(command: GenerateReportCommand) =
-        let outputDir = Path.Combine(Directory.GetCurrentDirectory(), "Result", command.ProcessId.ToString())
+        let outputDir = 
+            match command.OutputDirectory with
+            | Some outputDir -> outputDir
+            | _ -> Path.Combine(Directory.GetCurrentDirectory(), "Result", command.ProcessId.ToString())
         Directory.CreateDirectory(outputDir) |> ignore
 
         // handle all other messages

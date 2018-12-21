@@ -60,6 +60,9 @@
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="ES.ManagedInjector">
+      <HintPath>..\Lib\ES.ManagedInjector.dll</HintPath>
+    </Reference>
     <Reference Include="mscorlib" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -70,11 +73,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\ES.Shed.ManagedInjector\ES.Shed.ManagedInjector.csproj">
-      <Name>ES.Shed.ManagedInjector</Name>
-      <Project>{510b909d-256d-4a13-b64c-092ae344dbda}</Project>
-      <Private>True</Private>
-    </ProjectReference>
     <ProjectReference Include="..\ES.Shed\ES.Shed.fsproj">
       <Name>ES.Shed</Name>
       <Project>{16aaa4f1-36a2-437f-84de-d6ae33edb7d2}</Project>

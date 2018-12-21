@@ -1,16 +1,16 @@
 ﻿namespace ES.Shed
 
 open System
+open System.Diagnostics
 open System.Reflection
 open Microsoft.Diagnostics.Runtime
+open System.Threading
 
-type ShedFramework(messageBus: MessageBus) = 
-    //let _debugger = new Debugger()
+type ShedFramework(timeout: Int32, messageBus: MessageBus) = 
     let mutable _dataTarget: DataTarget option = None
     let mutable _runtime: ClrRuntime option = None
     let mutable _executable: String option = None
-    let mutable _pid = 0     
-    let mutable _timeoutDone = false
+    let mutable _pid = 0
 
     let (_, info, _, error) = createLoggers(messageBus)
     
@@ -24,6 +24,7 @@ type ShedFramework(messageBus: MessageBus) =
         
     let createDataTarget() =        
         try 
+            Thread.Sleep(timeout)
             _dataTarget <- Some <| DataTarget.AttachToProcess(_pid, uint32 5000, AttachFlag.NonInvasive)
             
             if int _dataTarget.Value.PointerSize <> IntPtr.Size then
@@ -50,13 +51,11 @@ type ShedFramework(messageBus: MessageBus) =
         | :? ExtractCommand as extractCommand ->
             extractCommand.ProcessId <- Some _pid
             extractCommand.Executable <- _executable
-            //extractCommand.Debugger <- Some _debugger
 
         | :? DumpModulesCommand as dumpModuleCommand -> 
             dumpModuleCommand.Runtime <- _runtime
             dumpModuleCommand.DataTarget <- _dataTarget
             dumpModuleCommand.ProcessId <- Some _pid
-            //dumpModuleCommand.Debugger <- Some _debugger
 
         | :? DumpHeapCommand as dumpHeapCommand ->
             dumpHeapCommand.Runtime <- _runtime
@@ -66,41 +65,25 @@ type ShedFramework(messageBus: MessageBus) =
             genReportCommand.ProcessId <- _pid
 
         | _ -> ()
-
+        
     member this.Attach(pid: Int32) =
         _pid <- pid
         createDataTarget()
         _dataTarget.IsSome
-        (*
-        try 
-            _pid <- pid
-            if _debugger.Attach(_pid) then
-                info("Attached to pid: " + _pid.ToString())
-                true
-            else
-                error("Unable to attache to pid: " + pid.ToString())
-                false
-        with e ->
-            error(e.Message)
-            false
-        *)
 
     member this.CreateProcess(program: String) =
-        _executable <- Some program        
-        //_pid <- _debugger.Start(program)
+        _executable <- Some program
+        let proc = Process.Start(program)
+        _pid <- proc.Id
         info("Started program: " + program)
-
+        _pid
+        
     member this.Run(command: IMessage) =
         try
             createDataTargetIfNecessary(command)
             enrichMessage(command)              
             messageBus.Dispatch(command)   
         with e -> error("Exception: " + e.ToString())
-
-    (*
-    member this.Go(milliseconds: Int32) =
-        _debugger.Run(milliseconds)
-    *)
         
     member this.Dispose() =
         messageBus.Dispatch(new Dispose())
@@ -114,9 +97,7 @@ type ShedFramework(messageBus: MessageBus) =
         | _ -> ()
 
         match _executable with
-        | Some _ -> 
-            //_debugger.Kill()            
-            info("Process terminated")
+        | Some _ -> info("Process terminated")
         | None -> ()
 
     interface IDisposable with

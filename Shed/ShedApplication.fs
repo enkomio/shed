@@ -11,17 +11,7 @@ type ShedApplication(shed: ShedFramework) =
     member this.DumpHeap() =
         let command = new DumpHeapCommand()
         shed.Run(command)
-
-    (*
-    member this.Extract() =
-        let command = new ExtractCommand()
-        shed.Run(command)
-        *)
-    (*
-    member this.Run(milliseconds: Int32) =
-        shed.Go(milliseconds)
-    *)
-
-    member this.GenerateReport() =
-        let command = new GenerateReportCommand()
+        
+    member this.GenerateReport(outputDirectory: String option) =
+        let command = new GenerateReportCommand(OutputDirectory=outputDirectory)
         shed.Run(command)

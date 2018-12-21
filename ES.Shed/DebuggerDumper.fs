@@ -1,5 +1,5 @@
 ﻿namespace ES.Shed
-
+(*
 open System
 open System.IO
 open System.Reflection
@@ -96,3 +96,4 @@ type DebuggerDumper(settings: HandlerSettings) =
 
         member this.Handle(command: IMessage) =
             this.Handle(command)
+*)

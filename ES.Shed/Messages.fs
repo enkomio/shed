@@ -31,7 +31,6 @@ type DumpModulesCommand() =
     member val Runtime: ClrRuntime option = None with get, set
     member val DataTarget: DataTarget option = None with get, set
     member val ProcessId: Int32 option = None with get, set
-    member val Debugger: ES.Shed.Debugger option = None with get, set
 
 type DumpHeapCommand() =    
     inherit BaseCommand()
@@ -42,11 +41,11 @@ type ExtractCommand() =
     inherit BaseCommand()
     member val ProcessId: Int32 option = None with get, set
     member val Executable: String option = None with get, set
-    member val Debugger: ES.Shed.Debugger option = None with get, set
 
 type GenerateReportCommand() =    
     inherit BaseCommand()
     member val ProcessId = -1 with get, set
+    member val OutputDirectory: String option = None with get, set
     
 type ExtractedManagedModuleEvent(clrModule: ClrModule, bytes: Byte array, isDll: Boolean, isExec: Boolean) =
     inherit BaseEvent()
