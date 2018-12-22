@@ -38,12 +38,9 @@ namespace WindowsFormHelloWorld
             this.Hello.AutoSize = true;
             this.Hello.Location = new System.Drawing.Point(39, 44);
             this.Hello.Name = "Hello";
-            this.Hello.Size = new System.Drawing.Size(0, 13);
+            this.Hello.Size = new System.Drawing.Size(164, 13);
             this.Hello.TabIndex = 0;
-
-            var id = Process.GetCurrentProcess().Id;
-            this.Hello.Text = "Hello World, from process: " + id.ToString();
-
+            this.Hello.Text = "Hello World, from process: 17704";
             // 
             // MainForm
             // 
@@ -52,6 +49,7 @@ namespace WindowsFormHelloWorld
             this.ClientSize = new System.Drawing.Size(235, 128);
             this.Controls.Add(this.Hello);
             this.Name = "MainForm";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Form1";
             this.ResumeLayout(false);
             this.PerformLayout();

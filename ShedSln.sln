@@ -50,6 +50,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "mdbgext", "Thirdpart\MDbg S
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WindowsFormHelloWorld", "Tests\WindowsFormHelloWorld\WindowsFormHelloWorld.csproj", "{BC0734E8-1B50-4A91-B83C-1E0EEF9E3BAD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InjectedAssembly", "Tests\InjectedAssembly\InjectedAssembly.csproj", "{9247D596-30CA-4E24-AC10-A1B965CA0E02}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -128,6 +130,10 @@ Global
 		{BC0734E8-1B50-4A91-B83C-1E0EEF9E3BAD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BC0734E8-1B50-4A91-B83C-1E0EEF9E3BAD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BC0734E8-1B50-4A91-B83C-1E0EEF9E3BAD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9247D596-30CA-4E24-AC10-A1B965CA0E02}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9247D596-30CA-4E24-AC10-A1B965CA0E02}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9247D596-30CA-4E24-AC10-A1B965CA0E02}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9247D596-30CA-4E24-AC10-A1B965CA0E02}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -149,6 +155,7 @@ Global
 		{C18D303B-2C55-43EB-A3DF-39CF3FB1D447} = {18F30AEE-FCE6-47F4-818E-01024C3A6562}
 		{1511F9E6-6AC4-4F3F-863D-3430469A7335} = {18F30AEE-FCE6-47F4-818E-01024C3A6562}
 		{BC0734E8-1B50-4A91-B83C-1E0EEF9E3BAD} = {17951A7F-32F9-4EE1-B4F7-989F11468AF0}
+		{9247D596-30CA-4E24-AC10-A1B965CA0E02} = {17951A7F-32F9-4EE1-B4F7-989F11468AF0}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {678F7046-7B4C-4B9B-A695-85CC790AED5B}

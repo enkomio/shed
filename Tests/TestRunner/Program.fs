@@ -4,7 +4,7 @@ open System.Reflection
 open System.Diagnostics.Contracts
 open System.Diagnostics
 open System.Threading
-open SmtpClientCredentials
+open InjectedAssembly
 
 let currentPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
 
@@ -48,7 +48,7 @@ let injectExternalAssembly<'T>() =
 [<EntryPoint>]
 let main argv = 
     try 
-        injectExternalAssembly<MailSender>()
+        injectExternalAssembly<EntryPoint>()
         dumpHeapTestCase<HelloWorld.Program>()
         dumpModulesTestCase<HelloWorld.Program>()
         0

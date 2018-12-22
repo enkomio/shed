@@ -83,6 +83,11 @@
       <Project>{f32c73ac-4b90-4a68-b1bb-00bfdc7edba3}</Project>
       <Private>True</Private>
     </ProjectReference>
+    <ProjectReference Include="..\InjectedAssembly\InjectedAssembly.csproj">
+      <Name>InjectedAssembly</Name>
+      <Project>{9247d596-30ca-4e24-ac10-a1b965ca0e02}</Project>
+      <Private>True</Private>
+    </ProjectReference>
     <ProjectReference Include="..\SmtpClientCredentials\SmtpClientCredentials.csproj">
       <Name>SmtpClientCredentials</Name>
       <Project>{a3d00235-363a-4568-b775-5ac7a87028d2}</Project>
