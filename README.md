@@ -33,6 +33,10 @@ For example, to inject the Assembly _InjectedAssembly_ into the process with pid
 
 With the _--method_ option you can specify a method, from _InjectedAssembly.exe_ to invoke.
 
+Find below an example of execution:
+
+<img src="https://raw.githubusercontent.com/enkomio/media/master/Shed/Injection.gif" />
+
 ### Inspecting an already running application
 In order to inspect an already running process you have to pass the pid to _Shed_. Example:
 
