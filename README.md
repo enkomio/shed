@@ -19,6 +19,23 @@ _Shed_ is able to:
  - [Download binary][2]
 
 ## Using Shed
+_Shed_ is a command line tool. To display all available options run:
+
+``shed.exe --help``
+
+### Inspecting an already running application
+In order to inspect an already running process you have to pass the pid to _Shed_. Example:
+
+``Shed.exe --pid 2356``
+
+### Inspecting a binary
+In order to inspect a binary, _Shed_ needs to execute it and to attach to it in order to inspect the runtime. Example:
+
+``Shed.exe --exe malware.exe``
+
+You can also specify the amount of time (in milliseconds) to wait before to suspend the process. This will allow the program to have the time to initialize its properties. Example:
+
+``Shed.exe --timeout 2000 --exe malware.exe``
 
 ### Injecting an Assembly in a remote process
 With _Shed_ is possible to inject a .NET Assembly in a remote process thanks to the <a href="https://github.com/enkomio/ManagedInjector">ManagedInjector</a> Library. In order to do so, it is necessary to specify the _pid_ of the process and the _exe_ to inject. Once that the Assembly is injected is possible to activate it by invoking a specific method. The rules to identify the method are inherithed by the _ManagedInjector_ project and are the following:
@@ -35,20 +52,6 @@ With the _--method_ option you can specify a method, from _InjectedAssembly.exe_
 
 Find below an example of execution:
 <img src="https://raw.githubusercontent.com/enkomio/media/master/Shed/Injection.gif" />
-
-### Inspecting an already running application
-In order to inspect an already running process you have to pass the pid to _Shed_. Example:
-
-``Shed.exe --pid 2356``
-
-### Inspecting a binary
-In order to inspect a binary, _Shed_ needs to execute it and to attach to it in order to inspect the runtime. Example:
-
-``Shed.exe --exe malware.exe``
-
-You can also specify the amount of time (in milliseconds) to wait before to suspend the process. This will allow the program to have the time to initialize its properties. Example:
-
-``Shed.exe --timeout 2000 --exe malware.exe``
 
 ### Dumping options
 By default _Shed_ dump both the heap and the modules. If you want only one of that specify the _--dump-heap_ option to dump only the objects in the heap or the _--dump-modules_ to dump only the modules.
