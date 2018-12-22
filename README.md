@@ -20,6 +20,9 @@ _Shed_ is able to:
 
 ## Using Shed
 
+### Injecting an Assembly in a remote process
+TBD
+
 ### Inspecting an already running application
 In order to inspect an already running process you have to pass the pid to _Shed_. Example:
 
