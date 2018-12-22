@@ -21,7 +21,17 @@ _Shed_ is able to:
 ## Using Shed
 
 ### Injecting an Assembly in a remote process
-TBD
+With _Shed_ is possible to inject a .NET Assembly in a remote process thanks to the <a href="https://github.com/enkomio/ManagedInjector">ManagedInjector</a> Library. In order to do so, it is necessary to specify the _pid_ of the process and the _exe_ to inject. Once that the Assembly is injected is possible to activate it by invoking a specific method. The rules to identify the method are inherithed by the _ManagedInjector_ project and are the following:
+
+* You must specify the full method name to invoke (eg. _this.is.my.namespace.class.method_)
+* You can inject an executable that defines an _EntryPoint_ method to execute (like a _Console_ project)
+* You can define a method with the following signatue: _<public|private> static void Inject()_
+
+For example, to inject the Assembly _InjectedAssembly_ into the process with pid _1234_, you have the run _Shed_ with the following command:
+
+``shed.exe --pid 1234 --exe InjectedAssembly.dll --inject``
+
+With the _--method_ option you can specify a method, from _InjectedAssembly.exe_ to invoke.
 
 ### Inspecting an already running application
 In order to inspect an already running process you have to pass the pid to _Shed_. Example:
