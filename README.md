@@ -26,16 +26,16 @@ TBD
 ### Inspecting an already running application
 In order to inspect an already running process you have to pass the pid to _Shed_. Example:
 
-Shed.exe --pid 2356
+``Shed.exe --pid 2356``
 
 ### Inspecting a binary
 In order to inspect a binary, _Shed_ needs to execute it and to attach to it in order to inspect the runtime. Example:
 
-**Shed.exe --exe malware.exe**
+``Shed.exe --exe malware.exe``
 
 You can also specify the amount of time (in milliseconds) to wait before to suspend the process. This will allow the program to have the time to initialize its properties. Example:
 
-**Shed.exe --timeout 2000 --exe malware.exe**
+``Shed.exe --timeout 2000 --exe malware.exe``
 
 ### Dumping options
 By default _Shed_ dump both the heap and the modules. If you want only one of that specify the _--dump-heap_ option to dump only the objects in the heap or the _--dump-modules_ to dump only the modules.
@@ -51,7 +51,7 @@ For example, if you want to filter all the *System.IO* namespace but you are int
 ### Examples
 In the _Examples_ folder you will find three different projects that you can use in order to test _Shed_. Example:
 
-**Shed.exe --exe ..\Examples\ConfigurationSample\ConfigurationSample.exe**
+``Shed.exe --exe ..\Examples\ConfigurationSample\ConfigurationSample.exe``
 
 When the analysis is completed, _Shed_ will print where you can find the result, as shown below:
 
