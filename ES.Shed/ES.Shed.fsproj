@@ -80,28 +80,6 @@
     </Reference>
     <Reference Include="System.Xml" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Thirdpart\MDbg Sample\debugger\corapi\corapi.csproj">
-      <Name>corapi</Name>
-      <Project>{04ef9865-e1b1-403d-802b-e4faea50a634}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Thirdpart\MDbg Sample\debugger\mdbgeng\mdbgeng.csproj">
-      <Name>mdbgeng</Name>
-      <Project>{634b90a2-0344-44c5-83f0-06180b2fda05}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Thirdpart\MDbg Sample\debugger\NativeDebugWrappers\NativeDebugWrappers.csproj">
-      <Name>NativeDebugWrappers</Name>
-      <Project>{3991ab6c-468b-4c28-95fc-3188cfb34180}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Thirdpart\MDbg Sample\debugger\raw\raw.csproj">
-      <Name>raw</Name>
-      <Project>{c18d303b-2c55-43eb-a3df-39cf3fb1d447}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-  </ItemGroup>
   <Choose>
     <When Condition="$(TargetFrameworkIdentifier) == 'MonoAndroid' And ($(TargetFrameworkVersion) == 'v7.0' Or $(TargetFrameworkVersion) == 'v7.1' Or $(TargetFrameworkVersion) == 'v8.0' Or $(TargetFrameworkVersion) == 'v8.1')">
       <ItemGroup>

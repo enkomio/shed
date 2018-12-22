@@ -83,16 +83,6 @@ Target "Compile" (fun _ ->
 
     // build Shed
     build(Path.Combine("Shed", "Shed.fsproj"), buildDir)
-
-    // build Tests
-    let buildTestDir = Path.Combine(buildDir, "Examples")
-    ensureDirectory buildTestDir
-    [        
-        Path.Combine("Tests", "ConfigurationSample", "ConfigurationSample.csproj")
-        Path.Combine("Tests", "HelloWorld", "HelloWorld.csproj")
-        Path.Combine("Tests", "LoadViaReflection", "LoadViaReflection.csproj")
-    ]
-    |> List.iter(fun project -> build(project, buildTestDir))
 )
 
 Target "Release" (fun _ ->

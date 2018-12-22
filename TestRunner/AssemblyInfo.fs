@@ -2,7 +2,7 @@
 namespace System
 open System.Reflection
 
-[<assembly: AssemblyTitleAttribute("Shed")>]
+[<assembly: AssemblyTitleAttribute("TestRunner")>]
 [<assembly: AssemblyProductAttribute("Shed")>]
 [<assembly: AssemblyCompanyAttribute("Enkomio")>]
 [<assembly: AssemblyDescriptionAttribute("A .NET runtime inspector.")>]
@@ -12,7 +12,7 @@ open System.Reflection
 do ()
 
 module internal AssemblyVersionInformation =
-    let [<Literal>] AssemblyTitle = "Shed"
+    let [<Literal>] AssemblyTitle = "TestRunner"
     let [<Literal>] AssemblyProduct = "Shed"
     let [<Literal>] AssemblyCompany = "Enkomio"
     let [<Literal>] AssemblyDescription = "A .NET runtime inspector."

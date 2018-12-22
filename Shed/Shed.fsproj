@@ -78,11 +78,6 @@
       <Project>{16aaa4f1-36a2-437f-84de-d6ae33edb7d2}</Project>
       <Private>True</Private>
     </ProjectReference>
-    <ProjectReference Include="..\Thirdpart\dnlib\src\dnlib.csproj">
-      <Name>dnlib</Name>
-      <Project>{f70031dd-c41f-4559-a555-fb33aed501b4}</Project>
-      <Private>True</Private>
-    </ProjectReference>
   </ItemGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
