@@ -111,7 +111,7 @@ module Program =
             Console.Error.WriteLine("The file '{0}', doesn't exists.", filename)
             1
         else
-            let assembly = Assembly.Load(filename)
+            let assembly = Assembly.LoadFile(filename)
             let injector = new Injector(pid, assembly, method)
             match injector.Inject() with
             | InjectionResult.Success -> 
@@ -146,7 +146,7 @@ module Program =
                     printUsage(parser.PrintUsage())   
                     1
                 | (Some pid, Some exe, true) ->
-                    // maybe inject assembly
+                    // inject assembly
                     let methodName = results.GetResult(<@ Method @>, String.Empty)
                     injectAssembly(pid, exe, methodName)
                 | (Some pid, None, _) ->

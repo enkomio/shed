@@ -4,14 +4,13 @@ open System.Reflection
 open System.Diagnostics.Contracts
 open System.Diagnostics
 open System.Threading
-open ES.ManagedInjector
 open SmtpClientCredentials
 
 let currentPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
 
 let inspectProcess(commandLine: String) =
     let args = commandLine.Split(' ')
-    Shed.Program.main(args) |> ignore
+    Contract.Assert(Shed.Program.main(args) = 0)    
 
 let dumpHeapTestCase<'T>() =
     let tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"))
@@ -29,7 +28,7 @@ let dumpModulesTestCase<'T>() =
     Contract.Assert(Directory.Exists(tempDir), "Result directory not created")
     Directory.Delete(tempDir, true)
 
-let injectExternalAssembly() =
+let injectExternalAssembly<'T>() =
     let assemblyFile = Path.GetFullPath(Path.Combine("..", "..", "..", "WindowsFormHelloWorld", "bin", "Debug", "WindowsFormHelloWorld.exe"))
     let assemblyExecute = Assembly.LoadFile(assemblyFile)
     let assemblyDir = Path.GetDirectoryName(assemblyExecute.Location)
@@ -39,17 +38,17 @@ let injectExternalAssembly() =
     let proc = Process.Start(procInfo)
     Thread.Sleep(1000)
 
-    let injector = new Injector(proc.Id, (new MailSender(String.Empty)).GetType().Assembly)
-    let injectionResult = injector.Inject()
+    //  run Shed
+    let exe = typeof<'T>.Assembly.Location
+    let commandLine = String.Format("--exe {0} --pid {1} --inject", exe, proc.Id)
+    inspectProcess(commandLine)    
     proc.Kill()
-
-    Contract.Assert((injectionResult = InjectionResult.Success))
     Console.WriteLine("Injection successful")
     
 [<EntryPoint>]
 let main argv = 
     try 
-        injectExternalAssembly()
+        injectExternalAssembly<MailSender>()
         dumpHeapTestCase<HelloWorld.Program>()
         dumpModulesTestCase<HelloWorld.Program>()
         0
