@@ -40,7 +40,7 @@ namespace WindowsFormHelloWorld
             this.Hello.Name = "Hello";
             this.Hello.Size = new System.Drawing.Size(164, 13);
             this.Hello.TabIndex = 0;
-            this.Hello.Text = "Hello World, from process: 17704";
+            this.Hello.Text = "Hello World, from process: " + Process.GetCurrentProcess().Id.ToString();
             // 
             // MainForm
             // 
