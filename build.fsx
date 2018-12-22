@@ -5,7 +5,6 @@
 #r @"packages/FAKE/tools/FakeLib.dll"
 
 open System
-open System.Collections.Generic
 open System.IO
 
 open Fake
@@ -18,14 +17,8 @@ let project = "Shed"
 // Short summary of the project
 let summary = "A .NET runtime inspector."
 
-// Longer description of the project
-let description = summary
-
 // List of author names (for NuGet package)
 let authors = [ "Enkomio" ]
-
-// File system information
-let solutionFile  = "ShedSln.sln"
 
 // Build dir
 let buildDir = "./build"
@@ -42,15 +35,12 @@ let releaseNotesData =
 let releaseVersion = (List.head releaseNotesData)
 trace("Build release: " + releaseVersion.AssemblyVersion)
 
-let stable = 
-    match releaseNotesData |> List.tryFind (fun r -> r.NugetVersion.Contains("-") |> not) with
-    | Some stable -> stable
-    | _ -> releaseVersion
-
 let genFSAssemblyInfo (projectPath) =
     let projectName = System.IO.Path.GetFileNameWithoutExtension(projectPath)
-    let folderName = System.IO.Path.GetFileName(System.IO.Path.GetDirectoryName(projectPath))
+    let folderName = System.IO.Path.GetDirectoryName(projectPath)
     let fileName = folderName @@ "AssemblyInfo.fs"
+    Console.WriteLine(fileName)
+
     CreateFSharpAssemblyInfo fileName
       [ Attribute.Title (projectName)
         Attribute.Product project
@@ -59,7 +49,7 @@ let genFSAssemblyInfo (projectPath) =
         Attribute.Version (releaseVersion.AssemblyVersion + ".*")
         Attribute.FileVersion (releaseVersion.AssemblyVersion + ".*")
         Attribute.InformationalVersion (releaseVersion.NugetVersion + ".*") ]
-        
+
 Target "Clean" (fun _ ->
     CleanDir buildDir
     ensureDirectory buildDir
