@@ -19,19 +19,9 @@ _Shed_ is able to:
  - [Download binary][2]
 
 ## Using Shed
+_Shed_ is a command line tool. To display all available options run:
 
-### Injecting an Assembly in a remote process
-With _Shed_ is possible to inject a .NET Assembly in a remote process thanks to the <a href="https://github.com/enkomio/ManagedInjector">ManagedInjector</a> Library. In order to do so, it is necessary to specify the _pid_ of the process and the _exe_ to inject. Once that the Assembly is injected is possible to activate it by invoking a specific method. The rules to identify the method are inherithed by the _ManagedInjector_ project and are the following:
-
-* You must specify the full method name to invoke (eg. _this.is.my.namespace.class.method_)
-* You can inject an executable that defines an _EntryPoint_ method to execute (like a _Console_ project)
-* You can define a method with the following signatue: _<public|private> static void Inject()_
-
-For example, to inject the Assembly _InjectedAssembly_ into the process with pid _1234_, you have the run _Shed_ with the following command:
-
-``shed.exe --pid 1234 --exe InjectedAssembly.dll --inject``
-
-With the _--method_ option you can specify a method, from _InjectedAssembly.exe_ to invoke.
+``shed.exe --help``
 
 ### Inspecting an already running application
 In order to inspect an already running process you have to pass the pid to _Shed_. Example:
@@ -46,6 +36,22 @@ In order to inspect a binary, _Shed_ needs to execute it and to attach to it in 
 You can also specify the amount of time (in milliseconds) to wait before to suspend the process. This will allow the program to have the time to initialize its properties. Example:
 
 ``Shed.exe --timeout 2000 --exe malware.exe``
+
+### Injecting an Assembly in a remote process
+With _Shed_ is possible to inject a .NET Assembly in a remote process thanks to the <a href="https://github.com/enkomio/ManagedInjector">ManagedInjector</a> Library. In order to do so, it is necessary to specify the _pid_ of the process and the _exe_ to inject. Once that the Assembly is injected is possible to activate it by invoking a specific method. The rules to identify the method are inherithed by the _ManagedInjector_ project and are the following:
+
+* You must specify the full method name to invoke (eg. _this.is.my.namespace.class.method_)
+* You can inject an executable that defines an _EntryPoint_ method to execute (like a _Console_ project)
+* You can define a method with the following signatue: _<public|private> static void Inject()_
+
+For example, to inject the Assembly _InjectedAssembly_ into the process with pid _1234_, you have the run _Shed_ with the following command:
+
+``shed.exe --pid 1234 --exe InjectedAssembly.dll --inject``
+
+With the _--method_ option you can specify a method, from _InjectedAssembly.exe_ to invoke.
+
+Find below an example of execution:
+<img src="https://raw.githubusercontent.com/enkomio/media/master/Shed/Injection.gif" />
 
 ### Dumping options
 By default _Shed_ dump both the heap and the modules. If you want only one of that specify the _--dump-heap_ option to dump only the objects in the heap or the _--dump-modules_ to dump only the modules.
