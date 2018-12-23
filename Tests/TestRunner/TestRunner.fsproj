@@ -93,6 +93,11 @@
       <Project>{a3d00235-363a-4568-b775-5ac7a87028d2}</Project>
       <Private>True</Private>
     </ProjectReference>
+    <ProjectReference Include="..\WindowsFormHelloWorld\WindowsFormHelloWorld.csproj">
+      <Name>WindowsFormHelloWorld</Name>
+      <Project>{bc0734e8-1b50-4a91-b83c-1e0eef9e3bad}</Project>
+      <Private>True</Private>
+    </ProjectReference>
   </ItemGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

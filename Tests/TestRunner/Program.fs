@@ -29,6 +29,8 @@ let dumpModulesTestCase<'T>() =
     Directory.Delete(tempDir, true)
 
 let injectExternalAssembly<'T>() =
+    // this force compilation of the project
+    let _ = new WindowsFormHelloWorld.MainForm()
     let assemblyFile = Path.GetFullPath(Path.Combine("..", "..", "..", "WindowsFormHelloWorld", "bin", "Debug", "WindowsFormHelloWorld.exe"))
     let assemblyExecute = Assembly.LoadFile(assemblyFile)
     let assemblyDir = Path.GetDirectoryName(assemblyExecute.Location)
@@ -44,14 +46,28 @@ let injectExternalAssembly<'T>() =
     inspectProcess(commandLine)    
     proc.Kill()
     Console.WriteLine("Injection successful")
+
+let injectExternalAssemblyInNativeApplication<'T>() =
+    let executable = Path.Combine(Environment.ExpandEnvironmentVariables("%windir%\SysWoW64"), "notepad.exe")
+    let proc = Process.Start(executable)
+    Thread.Sleep(1000)
+
+    //  run Shed
+    let exe = typeof<'T>.Assembly.Location
+    let commandLine = String.Format("--exe {0} --pid {1} --inject", exe, proc.Id)
+    inspectProcess(commandLine)    
+    proc.Kill()
+    Console.WriteLine("Injection successful")
     
 [<EntryPoint>]
 let main argv = 
     try 
+        injectExternalAssemblyInNativeApplication<SmtpClientCredentials.Program>()
         injectExternalAssembly<EntryPoint>()
         dumpHeapTestCase<HelloWorld.Program>()
         dumpModulesTestCase<HelloWorld.Program>()
         0
     with e ->
         Console.WriteLine(e)
+        Contract.Assert(false, e.ToString())
         -1
