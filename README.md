@@ -9,6 +9,7 @@ _Shed_ is an application that allow to inspect the .NET runtime of a program in 
 overview of which information are stored once that the malware is executed.
 
 _Shed_ is able to:
+* Inject a .NET Assembly in a remote process (both managed and un-managed)
 * Extract all objects stored in the managed heap
 * Print strings stored in memory
 * Save the snapshot of the heap in a JSON format for post-processing
