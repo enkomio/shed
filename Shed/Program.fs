@@ -117,8 +117,8 @@ module Program =
             | InjectionResult.Success -> 
                 Console.WriteLine("DLL was correctly injected");
                 0
-            | error -> 
-                Console.Error.WriteLine("Unable to inject the given file. Reason: {0}", error.ToString())
+            | error ->                 
+                Console.Error.WriteLine("Unable to inject the given file. Reason: {0}, nessage: {1}", error.ToString(), injector.GetLastErrorMessage())
                 1
                 
     [<EntryPoint>]
