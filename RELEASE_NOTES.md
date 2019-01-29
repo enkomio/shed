@@ -1,3 +1,6 @@
+### 2.0.1 - XX/XX/2019
+- Updated managed injection library to fix bug 
+
 ### 2.0.0 - 22/12/2018
 - Improved dumping code
 - Improved reporting
